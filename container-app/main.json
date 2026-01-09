@@ -1,0 +1,1079 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.39.26.7824",
+      "templateHash": "2536175576613654769"
+    }
+  },
+  "parameters": {
+    "environmentName": {
+      "type": "string",
+      "metadata": {
+        "description": "Environment name"
+      }
+    },
+    "envType": {
+      "type": "string",
+      "defaultValue": "dev",
+      "metadata": {
+        "description": "Environment type (dev or prod)"
+      }
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Primary location for resources"
+      }
+    },
+    "managedIdentityId": {
+      "type": "string",
+      "metadata": {
+        "description": "Managed Identity ID"
+      }
+    },
+    "managedIdentityClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "Managed Identity Client ID"
+      }
+    },
+    "logAnalyticsCustomerId": {
+      "type": "string",
+      "metadata": {
+        "description": "Log Analytics Customer ID"
+      }
+    },
+    "logAnalyticsSharedKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Log Analytics Shared Key"
+      }
+    },
+    "appInsightsConnectionString": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Insights Connection String"
+      }
+    },
+    "keyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault Name"
+      }
+    },
+    "containerRegistryName": {
+      "type": "string",
+      "metadata": {
+        "description": "Container Registry Name"
+      }
+    },
+    "containerRegistryEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Container Registry Endpoint"
+      }
+    },
+    "azureOpenAIEndpoint": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "azureOpenAIChatModel": {
+      "type": "string",
+      "defaultValue": "gpt-4o-mini"
+    },
+    "embeddingModel": {
+      "type": "string",
+      "defaultValue": "text-embedding-3-large"
+    },
+    "azureAISearchUri": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "enableDatabaseSeeding": {
+      "type": "bool",
+      "defaultValue": true
+    },
+    "tenantId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Tenant ID for Graph API"
+      }
+    },
+    "emailTenantId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Email Tenant ID (tenant where the sender mailbox resides)"
+      }
+    },
+    "senderEmail": {
+      "type": "string",
+      "defaultValue": "contact@yaleaf.com",
+      "metadata": {
+        "description": "Sender email address"
+      }
+    },
+    "frontendBaseUrl": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Frontend base URL"
+      }
+    }
+  },
+  "variables": {
+    "tags": {
+      "azd-env-name": "[parameters('environmentName')]",
+      "application": "jurisimple",
+      "environment": "[parameters('environmentName')]",
+      "envType": "[parameters('envType')]",
+      "SecurityControl": "Ignore"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "container-apps-env",
+      "resourceGroup": "[format('rg-{0}', parameters('environmentName'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environmentName": {
+            "value": "[parameters('environmentName')]"
+          },
+          "envType": {
+            "value": "[parameters('envType')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          },
+          "logAnalyticsCustomerId": {
+            "value": "[parameters('logAnalyticsCustomerId')]"
+          },
+          "logAnalyticsSharedKey": {
+            "value": "[parameters('logAnalyticsSharedKey')]"
+          },
+          "appInsightsConnectionString": {
+            "value": "[parameters('appInsightsConnectionString')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "11748996888061853219"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Location for resources"
+              }
+            },
+            "environmentName": {
+              "type": "string",
+              "metadata": {
+                "description": "Environment name"
+              }
+            },
+            "envType": {
+              "type": "string",
+              "metadata": {
+                "description": "Environment type (dev or prod)"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "Tags for resources"
+              }
+            },
+            "logAnalyticsCustomerId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Customer ID"
+              }
+            },
+            "logAnalyticsSharedKey": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Log Analytics Shared Key"
+              }
+            },
+            "appInsightsConnectionString": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights Connection String"
+              }
+            }
+          },
+          "resources": [
+            {
+              "condition": "[equals(parameters('envType'), 'prod')]",
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2024-01-01",
+              "name": "[format('vnet-{0}-001', parameters('environmentName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "10.0.0.0/16"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "snet-container-apps",
+                    "properties": {
+                      "addressPrefix": "10.0.0.0/23",
+                      "delegations": [
+                        {
+                          "name": "Microsoft.App.environments",
+                          "properties": {
+                            "serviceName": "Microsoft.App/environments"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "condition": "[equals(parameters('envType'), 'dev')]",
+              "type": "Microsoft.App/managedEnvironments",
+              "apiVersion": "2024-03-01",
+              "name": "[format('cae-{0}-001', parameters('environmentName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "appLogsConfiguration": {
+                  "destination": "log-analytics",
+                  "logAnalyticsConfiguration": {
+                    "customerId": "[parameters('logAnalyticsCustomerId')]",
+                    "sharedKey": "[parameters('logAnalyticsSharedKey')]"
+                  }
+                },
+                "daprAIConnectionString": "[parameters('appInsightsConnectionString')]",
+                "zoneRedundant": false
+              }
+            },
+            {
+              "condition": "[equals(parameters('envType'), 'dev')]",
+              "type": "Microsoft.App/managedEnvironments/dotNetComponents",
+              "apiVersion": "2024-02-02-preview",
+              "name": "[format('{0}/{1}', format('cae-{0}-001', parameters('environmentName')), 'aspire-dashboard')]",
+              "properties": {
+                "componentType": "AspireDashboard"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.App/managedEnvironments', format('cae-{0}-001', parameters('environmentName')))]"
+              ]
+            },
+            {
+              "condition": "[equals(parameters('envType'), 'prod')]",
+              "type": "Microsoft.App/managedEnvironments",
+              "apiVersion": "2024-03-01",
+              "name": "[format('cae-{0}-001', parameters('environmentName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "appLogsConfiguration": {
+                  "destination": "log-analytics",
+                  "logAnalyticsConfiguration": {
+                    "customerId": "[parameters('logAnalyticsCustomerId')]",
+                    "sharedKey": "[parameters('logAnalyticsSharedKey')]"
+                  }
+                },
+                "daprAIConnectionString": "[parameters('appInsightsConnectionString')]",
+                "vnetConfiguration": {
+                  "infrastructureSubnetId": "[reference(resourceId('Microsoft.Network/virtualNetworks', format('vnet-{0}-001', parameters('environmentName'))), '2024-01-01').subnets[0].id]",
+                  "internal": false
+                },
+                "zoneRedundant": true,
+                "workloadProfiles": [
+                  {
+                    "name": "Consumption",
+                    "workloadProfileType": "Consumption"
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-{0}-001', parameters('environmentName')))]"
+              ]
+            },
+            {
+              "condition": "[equals(parameters('envType'), 'prod')]",
+              "type": "Microsoft.App/managedEnvironments/dotNetComponents",
+              "apiVersion": "2024-02-02-preview",
+              "name": "[format('{0}/{1}', format('cae-{0}-001', parameters('environmentName')), 'aspire-dashboard')]",
+              "properties": {
+                "componentType": "AspireDashboard"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.App/managedEnvironments', format('cae-{0}-001', parameters('environmentName')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[if(equals(parameters('envType'), 'prod'), resourceId('Microsoft.App/managedEnvironments', format('cae-{0}-001', parameters('environmentName'))), resourceId('Microsoft.App/managedEnvironments', format('cae-{0}-001', parameters('environmentName'))))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[if(equals(parameters('envType'), 'prod'), format('cae-{0}-001', parameters('environmentName')), format('cae-{0}-001', parameters('environmentName')))]"
+            },
+            "defaultDomain": {
+              "type": "string",
+              "value": "[if(equals(parameters('envType'), 'prod'), reference(resourceId('Microsoft.App/managedEnvironments', format('cae-{0}-001', parameters('environmentName'))), '2024-03-01').defaultDomain, reference(resourceId('Microsoft.App/managedEnvironments', format('cae-{0}-001', parameters('environmentName'))), '2024-03-01').defaultDomain)]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "backend-api",
+      "resourceGroup": "[format('rg-{0}', parameters('environmentName'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environmentName": {
+            "value": "[parameters('environmentName')]"
+          },
+          "envType": {
+            "value": "[parameters('envType')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          },
+          "containerAppsEnvironmentId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}', parameters('environmentName'))), 'Microsoft.Resources/deployments', 'container-apps-env'), '2025-04-01').outputs.id.value]"
+          },
+          "managedIdentityId": {
+            "value": "[parameters('managedIdentityId')]"
+          },
+          "managedIdentityClientId": {
+            "value": "[parameters('managedIdentityClientId')]"
+          },
+          "containerRegistryEndpoint": {
+            "value": "[parameters('containerRegistryEndpoint')]"
+          },
+          "keyVaultName": {
+            "value": "[parameters('keyVaultName')]"
+          },
+          "appInsightsConnectionString": {
+            "value": "[parameters('appInsightsConnectionString')]"
+          },
+          "enableDatabaseSeeding": {
+            "value": "[parameters('enableDatabaseSeeding')]"
+          },
+          "tenantId": {
+            "value": "[parameters('tenantId')]"
+          },
+          "emailTenantId": "[if(not(empty(parameters('emailTenantId'))), createObject('value', parameters('emailTenantId')), createObject('value', parameters('tenantId')))]",
+          "senderEmail": {
+            "value": "[parameters('senderEmail')]"
+          },
+          "frontendBaseUrl": {
+            "value": "[parameters('frontendBaseUrl')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "8151535381589586169"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Location for resources"
+              }
+            },
+            "environmentName": {
+              "type": "string",
+              "metadata": {
+                "description": "Environment name"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "Tags for resources"
+              }
+            },
+            "containerAppsEnvironmentId": {
+              "type": "string",
+              "metadata": {
+                "description": "Container Apps Environment ID"
+              }
+            },
+            "managedIdentityId": {
+              "type": "string",
+              "metadata": {
+                "description": "Managed Identity ID"
+              }
+            },
+            "managedIdentityClientId": {
+              "type": "string",
+              "metadata": {
+                "description": "Managed Identity Client ID"
+              }
+            },
+            "containerRegistryEndpoint": {
+              "type": "string",
+              "metadata": {
+                "description": "Container Registry Endpoint"
+              }
+            },
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault Name"
+              }
+            },
+            "appInsightsConnectionString": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights Connection String"
+              }
+            },
+            "enableDatabaseSeeding": {
+              "type": "bool",
+              "metadata": {
+                "description": "Enable database seeding"
+              }
+            },
+            "envType": {
+              "type": "string",
+              "defaultValue": "dev",
+              "metadata": {
+                "description": "Environment type (dev or prod)"
+              }
+            },
+            "tenantId": {
+              "type": "string",
+              "metadata": {
+                "description": "Tenant ID for Graph API"
+              }
+            },
+            "emailTenantId": {
+              "type": "string",
+              "defaultValue": "[parameters('tenantId')]",
+              "metadata": {
+                "description": "Email Tenant ID (tenant where the sender mailbox resides)"
+              }
+            },
+            "senderEmail": {
+              "type": "string",
+              "metadata": {
+                "description": "Sender email address"
+              }
+            },
+            "frontendBaseUrl": {
+              "type": "string",
+              "metadata": {
+                "description": "Frontend base URL"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.App/containerApps",
+              "apiVersion": "2024-03-01",
+              "name": "ca-jurisimple-backend",
+              "location": "[parameters('location')]",
+              "tags": "[union(parameters('tags'), createObject('azd-service-name', 'backend-api'))]",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('managedIdentityId'))]": {}
+                }
+              },
+              "properties": {
+                "managedEnvironmentId": "[parameters('containerAppsEnvironmentId')]",
+                "configuration": {
+                  "activeRevisionsMode": "Single",
+                  "ingress": {
+                    "external": true,
+                    "targetPort": 8080,
+                    "transport": "auto",
+                    "corsPolicy": {
+                      "allowedOrigins": [
+                        "*"
+                      ],
+                      "allowedMethods": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
+                      ],
+                      "allowedHeaders": [
+                        "*"
+                      ],
+                      "allowCredentials": false
+                    }
+                  },
+                  "registries": [
+                    {
+                      "server": "[parameters('containerRegistryEndpoint')]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    }
+                  ],
+                  "secrets": [
+                    {
+                      "name": "sql-connection-string",
+                      "keyVaultUrl": "[format('{0}secrets/sql-connection-string', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "storage-connection-string",
+                      "keyVaultUrl": "[format('{0}secrets/storage-connection-string', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "jwt-key",
+                      "keyVaultUrl": "[format('{0}secrets/jwt-key', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "api-key",
+                      "keyVaultUrl": "[format('{0}secrets/api-key', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "service-api-key",
+                      "keyVaultUrl": "[format('{0}secrets/service-api-key', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "email-client-id",
+                      "keyVaultUrl": "[format('{0}secrets/email-client-id', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "email-client-secret",
+                      "keyVaultUrl": "[format('{0}secrets/email-client-secret', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    }
+                  ]
+                },
+                "template": {
+                  "containers": [
+                    {
+                      "name": "backend-api",
+                      "image": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest",
+                      "resources": {
+                        "cpu": "[json('0.5')]",
+                        "memory": "1Gi"
+                      },
+                      "env": [
+                        {
+                          "name": "ASPNETCORE_ENVIRONMENT",
+                          "value": "[if(equals(parameters('envType'), 'dev'), 'Development', 'Production')]"
+                        },
+                        {
+                          "name": "ConnectionStrings__DefaultConnection",
+                          "secretRef": "sql-connection-string"
+                        },
+                        {
+                          "name": "ConnectionStrings__BlobStorage",
+                          "secretRef": "storage-connection-string"
+                        },
+                        {
+                          "name": "JWT__Key",
+                          "secretRef": "jwt-key"
+                        },
+                        {
+                          "name": "JWT__Issuer",
+                          "value": "[format('jurisimple-{0}', parameters('environmentName'))]"
+                        },
+                        {
+                          "name": "JWT__Audience",
+                          "value": "[format('jurisimple-{0}', parameters('environmentName'))]"
+                        },
+                        {
+                          "name": "ApiKey__Key",
+                          "secretRef": "api-key"
+                        },
+                        {
+                          "name": "ApiKey__ServiceApiKey",
+                          "secretRef": "service-api-key"
+                        },
+                        {
+                          "name": "ENABLE_DATABASE_SEEDING",
+                          "value": "[string(parameters('enableDatabaseSeeding'))]"
+                        },
+                        {
+                          "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                          "value": "[parameters('appInsightsConnectionString')]"
+                        },
+                        {
+                          "name": "FilesStorage__ContainerName",
+                          "value": "documents"
+                        },
+                        {
+                          "name": "AZURE_CLIENT_ID",
+                          "value": "[parameters('managedIdentityClientId')]"
+                        },
+                        {
+                          "name": "EmailSettings__ClientId",
+                          "secretRef": "email-client-id"
+                        },
+                        {
+                          "name": "EmailSettings__ClientSecret",
+                          "secretRef": "email-client-secret"
+                        },
+                        {
+                          "name": "EmailSettings__TenantId",
+                          "value": "[parameters('emailTenantId')]"
+                        },
+                        {
+                          "name": "EmailSettings__SenderEmail",
+                          "value": "[parameters('senderEmail')]"
+                        },
+                        {
+                          "name": "EmailSettings__FrontendBaseUrl",
+                          "value": "[parameters('frontendBaseUrl')]"
+                        }
+                      ]
+                    }
+                  ],
+                  "scale": {
+                    "minReplicas": 0,
+                    "maxReplicas": 3
+                  }
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "name": {
+              "type": "string",
+              "value": "ca-jurisimple-backend"
+            },
+            "url": {
+              "type": "string",
+              "value": "[format('https://{0}', reference(resourceId('Microsoft.App/containerApps', 'ca-jurisimple-backend'), '2024-03-01').configuration.ingress.fqdn)]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}', parameters('environmentName'))), 'Microsoft.Resources/deployments', 'container-apps-env')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "chat-api",
+      "resourceGroup": "[format('rg-{0}', parameters('environmentName'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environmentName": {
+            "value": "[parameters('environmentName')]"
+          },
+          "envType": {
+            "value": "[parameters('envType')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          },
+          "containerAppsEnvironmentId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}', parameters('environmentName'))), 'Microsoft.Resources/deployments', 'container-apps-env'), '2025-04-01').outputs.id.value]"
+          },
+          "managedIdentityId": {
+            "value": "[parameters('managedIdentityId')]"
+          },
+          "managedIdentityClientId": {
+            "value": "[parameters('managedIdentityClientId')]"
+          },
+          "containerRegistryEndpoint": {
+            "value": "[parameters('containerRegistryEndpoint')]"
+          },
+          "keyVaultName": {
+            "value": "[parameters('keyVaultName')]"
+          },
+          "appInsightsConnectionString": {
+            "value": "[parameters('appInsightsConnectionString')]"
+          },
+          "azureOpenAIEndpoint": {
+            "value": "[parameters('azureOpenAIEndpoint')]"
+          },
+          "azureOpenAIChatModel": {
+            "value": "[parameters('azureOpenAIChatModel')]"
+          },
+          "embeddingModel": {
+            "value": "[parameters('embeddingModel')]"
+          },
+          "azureAISearchUri": {
+            "value": "[parameters('azureAISearchUri')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "8333124129362444144"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Location for resources"
+              }
+            },
+            "environmentName": {
+              "type": "string",
+              "metadata": {
+                "description": "Environment name"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "Tags for resources"
+              }
+            },
+            "containerAppsEnvironmentId": {
+              "type": "string",
+              "metadata": {
+                "description": "Container Apps Environment ID"
+              }
+            },
+            "managedIdentityId": {
+              "type": "string",
+              "metadata": {
+                "description": "Managed Identity ID"
+              }
+            },
+            "managedIdentityClientId": {
+              "type": "string",
+              "metadata": {
+                "description": "Managed Identity Client ID"
+              }
+            },
+            "containerRegistryEndpoint": {
+              "type": "string",
+              "metadata": {
+                "description": "Container Registry Endpoint"
+              }
+            },
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault Name"
+              }
+            },
+            "appInsightsConnectionString": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights Connection String"
+              }
+            },
+            "azureOpenAIEndpoint": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure OpenAI Endpoint"
+              }
+            },
+            "azureOpenAIChatModel": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure OpenAI Chat Model"
+              }
+            },
+            "embeddingModel": {
+              "type": "string",
+              "metadata": {
+                "description": "Embedding Model"
+              }
+            },
+            "azureAISearchUri": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure AI Search URI"
+              }
+            },
+            "envType": {
+              "type": "string",
+              "defaultValue": "dev",
+              "metadata": {
+                "description": "Environment type (dev or prod)"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.App/containerApps",
+              "apiVersion": "2024-03-01",
+              "name": "ca-jurisimple-chat",
+              "location": "[parameters('location')]",
+              "tags": "[union(parameters('tags'), createObject('azd-service-name', 'chat-api'))]",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('managedIdentityId'))]": {}
+                }
+              },
+              "properties": {
+                "managedEnvironmentId": "[parameters('containerAppsEnvironmentId')]",
+                "configuration": {
+                  "activeRevisionsMode": "Single",
+                  "ingress": {
+                    "external": true,
+                    "targetPort": 8080,
+                    "transport": "auto",
+                    "corsPolicy": {
+                      "allowedOrigins": [
+                        "*"
+                      ],
+                      "allowedMethods": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
+                      ],
+                      "allowedHeaders": [
+                        "*"
+                      ],
+                      "allowCredentials": false
+                    }
+                  },
+                  "registries": [
+                    {
+                      "server": "[parameters('containerRegistryEndpoint')]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    }
+                  ],
+                  "secrets": [
+                    {
+                      "name": "sql-connection-string",
+                      "keyVaultUrl": "[format('{0}secrets/sql-connection-string', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "storage-connection-string",
+                      "keyVaultUrl": "[format('{0}secrets/storage-connection-string', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "jwt-key",
+                      "keyVaultUrl": "[format('{0}secrets/jwt-key', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "api-key",
+                      "keyVaultUrl": "[format('{0}secrets/api-key', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "service-api-key",
+                      "keyVaultUrl": "[format('{0}secrets/service-api-key', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "azure-openai-key",
+                      "keyVaultUrl": "[format('{0}secrets/azure-openai-key', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "azure-aisearch-key",
+                      "keyVaultUrl": "[format('{0}secrets/azure-aisearch-key', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "cosmos-endpoint",
+                      "keyVaultUrl": "[format('{0}secrets/cosmos-endpoint', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    },
+                    {
+                      "name": "cosmos-key",
+                      "keyVaultUrl": "[format('{0}secrets/cosmos-key', reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri)]",
+                      "identity": "[parameters('managedIdentityId')]"
+                    }
+                  ]
+                },
+                "template": {
+                  "containers": [
+                    {
+                      "name": "chat-api",
+                      "image": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest",
+                      "resources": {
+                        "cpu": "[json('0.5')]",
+                        "memory": "1Gi"
+                      },
+                      "env": [
+                        {
+                          "name": "ASPNETCORE_ENVIRONMENT",
+                          "value": "[if(equals(parameters('envType'), 'dev'), 'Development', 'Production')]"
+                        },
+                        {
+                          "name": "ConnectionStrings__DefaultConnection",
+                          "secretRef": "sql-connection-string"
+                        },
+                        {
+                          "name": "ConnectionStrings__BlobStorage",
+                          "secretRef": "storage-connection-string"
+                        },
+                        {
+                          "name": "CosmosDb__Endpoint",
+                          "secretRef": "cosmos-endpoint"
+                        },
+                        {
+                          "name": "CosmosDb__Key",
+                          "secretRef": "cosmos-key"
+                        },
+                        {
+                          "name": "CosmosDb__DatabaseName",
+                          "value": "discussions"
+                        },
+                        {
+                          "name": "CosmosDb__ContainerName",
+                          "value": "conversations"
+                        },
+                        {
+                          "name": "AZURE_CLIENT_ID",
+                          "value": "[parameters('managedIdentityClientId')]"
+                        },
+                        {
+                          "name": "JWT__Key",
+                          "secretRef": "jwt-key"
+                        },
+                        {
+                          "name": "JWT__Issuer",
+                          "value": "[format('jurisimple-{0}', parameters('environmentName'))]"
+                        },
+                        {
+                          "name": "JWT__Audience",
+                          "value": "[format('jurisimple-{0}', parameters('environmentName'))]"
+                        },
+                        {
+                          "name": "ApiKey__Key",
+                          "secretRef": "api-key"
+                        },
+                        {
+                          "name": "ApiKey__ServiceApiKey",
+                          "secretRef": "service-api-key"
+                        },
+                        {
+                          "name": "AzureOpenAI__Endpoint",
+                          "value": "[parameters('azureOpenAIEndpoint')]"
+                        },
+                        {
+                          "name": "AzureOpenAI__Key",
+                          "secretRef": "azure-openai-key"
+                        },
+                        {
+                          "name": "AzureOpenAI__ChatModel",
+                          "value": "[parameters('azureOpenAIChatModel')]"
+                        },
+                        {
+                          "name": "AzureOpenAI__EmbeddingModel",
+                          "value": "[parameters('embeddingModel')]"
+                        },
+                        {
+                          "name": "AzureAISearch__Uri",
+                          "value": "[parameters('azureAISearchUri')]"
+                        },
+                        {
+                          "name": "AzureAISearch__Key",
+                          "secretRef": "azure-aisearch-key"
+                        },
+                        {
+                          "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                          "value": "[parameters('appInsightsConnectionString')]"
+                        }
+                      ]
+                    }
+                  ],
+                  "scale": {
+                    "minReplicas": 0,
+                    "maxReplicas": 3
+                  }
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "name": {
+              "type": "string",
+              "value": "ca-jurisimple-chat"
+            },
+            "url": {
+              "type": "string",
+              "value": "[format('https://{0}', reference(resourceId('Microsoft.App/containerApps', 'ca-jurisimple-chat'), '2024-03-01').configuration.ingress.fqdn)]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}', parameters('environmentName'))), 'Microsoft.Resources/deployments', 'container-apps-env')]"
+      ]
+    }
+  ],
+  "outputs": {
+    "AZURE_CONTAINER_APPS_ENVIRONMENT_ID": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}', parameters('environmentName'))), 'Microsoft.Resources/deployments', 'container-apps-env'), '2025-04-01').outputs.id.value]"
+    },
+    "BACKEND_API_URL": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}', parameters('environmentName'))), 'Microsoft.Resources/deployments', 'backend-api'), '2025-04-01').outputs.url.value]"
+    },
+    "CHAT_API_URL": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}', parameters('environmentName'))), 'Microsoft.Resources/deployments', 'chat-api'), '2025-04-01').outputs.url.value]"
+    },
+    "SERVICE_BACKEND_API_NAME": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}', parameters('environmentName'))), 'Microsoft.Resources/deployments', 'backend-api'), '2025-04-01').outputs.name.value]"
+    },
+    "SERVICE_CHAT_API_NAME": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}', parameters('environmentName'))), 'Microsoft.Resources/deployments', 'chat-api'), '2025-04-01').outputs.name.value]"
+    }
+  }
+}

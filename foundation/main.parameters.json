@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "${AZURE_ENV_NAME}"
+    },
+    "envType": {
+      "value": "${AZURE_ENV_TYPE=dev}"
+    },
+    "location": {
+      "value": "${AZURE_LOCATION}"
+    },
+    "applicationName": {
+      "value": "${APPLICATION_NAME=myapp}"
+    },
+    "jwtKey": {
+      "value": "${JWT_KEY=}"
+    },
+    "apiKey": {
+      "value": "${API_KEY=}"
+    },
+    "serviceApiKey": {
+      "value": "${SERVICE_API_KEY=}"
+    },
+    "emailClientId": {
+      "value": "${EMAIL_CLIENT_ID=}"
+    },
+    "emailClientSecret": {
+      "value": "${EMAIL_CLIENT_SECRET=}"
+    },
+    "acsConnectionString": {
+      "value": "${ACS_CONNECTION_STRING=}"
+    },
+    "azureOpenAIKey": {
+      "value": "${AZURE_OPENAI_KEY=}"
+    },
+    "azureAISearchSecret": {
+      "value": "${AZURE_AISEARCH_SECRET=}"
+    },
+    "currentUserPrincipalId": {
+      "value": "${AZURE_PRINCIPAL_ID=}"
+    },
+    "currentUserLogin": {
+      "value": "${AZURE_PRINCIPAL_LOGIN=}"
+    },
+    "cosmosDbDatabaseName": {
+      "value": "${COSMOS_DB_DATABASE_NAME=appdata}"
+    },
+    "sqlDatabaseName": {
+      "value": "${SQL_DATABASE_NAME=AppDb}"
+    }
+  }
+}
