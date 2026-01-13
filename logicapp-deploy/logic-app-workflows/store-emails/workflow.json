@@ -1,0 +1,318 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "triggers": {
+            "When_a_new_email_arrives_in_a_shared_mailbox_(V2)": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "office365"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/SharedMailbox/Mail/OnNewEmail",
+                    "queries": {
+                        "mailboxAddress": "@parameters('sharedMailboxAddress')",
+                        "importance": "Any",
+                        "hasAttachments": false,
+                        "includeAttachments": true,
+                        "folderId": "Inbox"
+                    }
+                },
+                "recurrence": {
+                    "interval": 1,
+                    "frequency": "Minute"
+                },
+                "splitOn": "@triggerBody()?['value']"
+            }
+        },
+        "actions": {
+            "Condition": {
+                "actions": {
+                    "For_each": {
+                        "foreach": "@triggerBody()?['attachments']",
+                        "actions": {
+                            "Create_blob_(V2)": {
+                                "runAfter": {
+                                    "Compose": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "type": "ApiConnection",
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "referenceName": "azureblob"
+                                        }
+                                    },
+                                    "method": "post",
+                                    "body": "@base64ToBinary(item()?['contentBytes'])",
+                                    "headers": {
+                                        "ReadFileMetadataFromServer": true
+                                    },
+                                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('storageAccountName')))}/files",
+                                    "queries": {
+                                        "folderPath": "@parameters('blobContainerPath')",
+                                        "name": "@{outputs('Compose')}",
+                                        "queryParametersSingleEncoded": true
+                                    }
+                                },
+                                "runtimeConfiguration": {
+                                    "contentTransfer": {
+                                        "transferMode": "Chunked"
+                                    }
+                                }
+                            },
+                            "Compose": {
+                                "type": "Compose",
+                                "inputs": "@concat(guid(),'.',last(split(item()?['name'], '.')))"
+                            },
+                            "Append_to_array_variable": {
+                                "runAfter": {
+                                    "Create_blob_(V2)": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "type": "AppendToArrayVariable",
+                                "inputs": {
+                                    "name": "Inputfiles",
+                                    "value": {
+                                        "url": "@concat(parameters('storageBlobEndpoint'), body('Create_blob_(V2)')?['Path'])",
+                                        "name": "@item()?['name']"
+                                    }
+                                }
+                            }
+                        },
+                        "type": "Foreach"
+                    },
+                    "Set_variable": {
+                        "runAfter": {
+                            "For_each": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "filesAdded",
+                            "value": true
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Initialize_variable_2": [
+                        "Succeeded"
+                    ]
+                },
+                "else": {
+                    "actions": {
+                        "Condition_1": {
+                            "actions": {},
+                            "else": {
+                                "actions": {}
+                            },
+                            "expression": {
+                                "and": [
+                                    {
+                                        "equals": [
+                                            "@triggerBody()?['subject']",
+                                            "dossier"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "If"
+                        }
+                    }
+                },
+                "expression": {
+                    "and": [
+                        {
+                            "equals": [
+                                "@triggerBody()?['hasAttachments']",
+                                true
+                            ]
+                        },
+                        {
+                            "equals": [
+                                "",
+                                ""
+                            ]
+                        }
+                    ]
+                },
+                "type": "If"
+            },
+            "Initialize_variable": {
+                "runAfter": {},
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "filesAdded",
+                            "type": "boolean",
+                            "value": false
+                        }
+                    ]
+                }
+            },
+            "Condition_2": {
+                "actions": {
+                    "HTTP_Run_Indexer": {
+                        "runAfter": {
+                            "HTTP_Post_Email": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "Http",
+                        "inputs": {
+                            "uri": "@{parameters('aiSearchEndpoint')}/indexers/@{parameters('aiSearchIndexerName')}/run?api-version=2020-06-30",
+                            "method": "POST",
+                            "headers": {
+                                "Content-Type": "application/json",
+                                "api-key": "@parameters('aiSearchApiKey')"
+                            }
+                        },
+                        "runtimeConfiguration": {
+                            "contentTransfer": {
+                                "transferMode": "Chunked"
+                            }
+                        }
+                    },
+                    "HTTP_Post_Email": {
+                        "type": "Http",
+                        "inputs": {
+                            "uri": "@{parameters('backendApiUrl')}/api/integration/email",
+                            "method": "POST",
+                            "headers": {
+                                "X-API-Key": "@parameters('backendApiKey')"
+                            },
+                            "body": "@variables('Payload')"
+                        },
+                        "runtimeConfiguration": {
+                            "contentTransfer": {
+                                "transferMode": "Chunked"
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Set_variable_1": [
+                        "Succeeded"
+                    ]
+                },
+                "else": {
+                    "actions": {}
+                },
+                "expression": {
+                    "and": [
+                        {
+                            "equals": [
+                                "@variables('filesAdded')",
+                                true
+                            ]
+                        }
+                    ]
+                },
+                "type": "If"
+            },
+            "Initialize_variable_1": {
+                "runAfter": {
+                    "Initialize_variable": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Payload",
+                            "type": "object"
+                        }
+                    ]
+                }
+            },
+            "Initialize_variable_2": {
+                "runAfter": {
+                    "Initialize_variable_1": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Inputfiles",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                }
+            },
+            "Set_variable_1": {
+                "runAfter": {
+                    "Condition": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "SetVariable",
+                "inputs": {
+                    "name": "Payload",
+                    "value": {
+                        "fromEmail": "@triggerBody()?['from']",
+                        "toEmail": "@triggerBody()?['toRecipients']",
+                        "ccEmail": "@triggerBody()?['ccRecipients']",
+                        "subject": "@triggerBody()?['subject']",
+                        "body": "@triggerBody()?['body']",
+                        "originalMessageId": "@triggerBody()?['id']",
+                        "sentDate": "@triggerBody()?['receivedDateTime']",
+                        "isRead": false,
+                        "isDraft": false,
+                        "attachments": "@variables('Inputfiles')"
+                    }
+                }
+            }
+        },
+        "outputs": {},
+        "parameters": {
+            "storageAccountName": {
+                "type": "String",
+                "defaultValue": ""
+            },
+            "storageBlobEndpoint": {
+                "type": "String",
+                "defaultValue": ""
+            },
+            "blobContainerPath": {
+                "type": "String",
+                "defaultValue": "/inputdata"
+            },
+            "backendApiUrl": {
+                "type": "String",
+                "defaultValue": ""
+            },
+            "backendApiKey": {
+                "type": "String",
+                "defaultValue": ""
+            },
+            "aiSearchEndpoint": {
+                "type": "String",
+                "defaultValue": ""
+            },
+            "aiSearchApiKey": {
+                "type": "String",
+                "defaultValue": ""
+            },
+            "aiSearchIndexerName": {
+                "type": "String",
+                "defaultValue": "vector-jt-poc-indexer"
+            },
+            "sharedMailboxAddress": {
+                "type": "String",
+                "defaultValue": ""
+            }
+        }
+    },
+    "kind": "Stateful"
+}

@@ -1,0 +1,29 @@
+{
+    "managedApiConnections": {
+        "office365": {
+            "api": {
+                "id": "/subscriptions/@appsetting('AZURE_SUBSCRIPTION_ID')/providers/Microsoft.Web/locations/@appsetting('AZURE_LOCATION')/managedApis/office365"
+            },
+            "connection": {
+                "id": "/subscriptions/@appsetting('AZURE_SUBSCRIPTION_ID')/resourceGroups/@appsetting('AZURE_RESOURCE_GROUP')/providers/Microsoft.Web/connections/@appsetting('OFFICE365_CONNECTION_NAME')"
+            },
+            "connectionRuntimeUrl": "@appsetting('OFFICE365_CONNECTION_RUNTIME_URL')",
+            "authentication": {
+                "type": "ManagedServiceIdentity"
+            }
+        },
+        "azureblob": {
+            "api": {
+                "id": "/subscriptions/@appsetting('AZURE_SUBSCRIPTION_ID')/providers/Microsoft.Web/locations/@appsetting('AZURE_LOCATION')/managedApis/azureblob"
+            },
+            "connection": {
+                "id": "/subscriptions/@appsetting('AZURE_SUBSCRIPTION_ID')/resourceGroups/@appsetting('AZURE_RESOURCE_GROUP')/providers/Microsoft.Web/connections/@appsetting('AZUREBLOB_CONNECTION_NAME')"
+            },
+            "connectionRuntimeUrl": "@appsetting('AZUREBLOB_CONNECTION_RUNTIME_URL')",
+            "authentication": {
+                "type": "ManagedServiceIdentity"
+            }
+        }
+    }
+}
+

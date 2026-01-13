@@ -1,0 +1,38 @@
+{
+    "storageAccountName": {
+        "type": "String",
+        "value": "@appsetting('WORKFLOW_STORAGE_ACCOUNT_NAME')"
+    },
+    "storageBlobEndpoint": {
+        "type": "String",
+        "value": "@appsetting('WORKFLOW_STORAGE_BLOB_ENDPOINT')"
+    },
+    "blobContainerPath": {
+        "type": "String",
+        "value": "@appsetting('WORKFLOW_BLOB_CONTAINER_PATH')"
+    },
+    "backendApiUrl": {
+        "type": "String",
+        "value": "@appsetting('WORKFLOW_BACKEND_API_URL')"
+    },
+    "backendApiKey": {
+        "type": "String",
+        "value": "@appsetting('WORKFLOW_BACKEND_API_KEY')"
+    },
+    "aiSearchEndpoint": {
+        "type": "String",
+        "value": "@appsetting('WORKFLOW_AISEARCH_ENDPOINT')"
+    },
+    "aiSearchApiKey": {
+        "type": "String",
+        "value": "@appsetting('WORKFLOW_AISEARCH_API_KEY')"
+    },
+    "aiSearchIndexerName": {
+        "type": "String",
+        "value": "@appsetting('WORKFLOW_AISEARCH_INDEXER_NAME')"
+    },
+    "sharedMailboxAddress": {
+        "type": "String",
+        "value": "@appsetting('WORKFLOW_SHARED_MAILBOX_ADDRESS')"
+    }
+}
