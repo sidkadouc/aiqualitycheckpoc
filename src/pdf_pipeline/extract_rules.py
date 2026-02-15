@@ -169,20 +169,36 @@ def _detect_rule_type_from_section(section_title: str) -> RuleType:
     return RuleType.UNSPECIFIED
 
 
-def _detect_severity_from_text(text: str) -> RuleSeverity:
-    """Heuristic severity detection from keywords in text."""
+def _detect_severity_from_text(text: str, rule_type: RuleType = RuleType.UNSPECIFIED) -> RuleSeverity:
+    """Detect rule severity using structure-first, keywords-second approach.
+
+    Priority order:
+    1. **Do/Don't section** → MANDATORY (the OECD Style Guide uses Do/Don't
+       as its strongest prescriptive signal — these are explicit instructions).
+    2. **Strong modal verbs** in text → MANDATORY ("must", "always", "never").
+    3. **Recommendation verbs** → RECOMMENDED ("should", "avoid", "prefer").
+    4. **Permission verbs** → OPTIONAL ("may", "can").
+    5. **Fallback** → RECOMMENDED for rules in numbered chapters (chapters 1-14
+       are prescriptive sections), INFORMATIONAL otherwise.
+    """
+    # 1. Structure signal: Do/Don't sections are always mandatory
+    if rule_type in (RuleType.DO, RuleType.DONT):
+        return RuleSeverity.MANDATORY
+
     t = text.lower()
-    # Mandatory indicators
+
+    # 2. Strong mandatory indicators
     mandatory_kw = (
         "must ", "must.", "shall ", "shall.", "always ", "never ",
         "is required", "are required", "obligatoire", "doit ",
-        "il faut", "do not ", "don't ", "ne doit pas", "ne pas ",
+        "il faut", "do not ", "don't ", "ne doit pas",
         "interdit", "forbidden", "shall not",
     )
     for kw in mandatory_kw:
         if kw in t:
             return RuleSeverity.MANDATORY
-    # Recommended indicators
+
+    # 3. Recommendation indicators
     recommended_kw = (
         "should ", "should.", "devrait", "il est recommandé",
         "it is recommended", "preferably", "prefer ", "avoid ",
@@ -191,12 +207,15 @@ def _detect_severity_from_text(text: str) -> RuleSeverity:
     for kw in recommended_kw:
         if kw in t:
             return RuleSeverity.RECOMMENDED
-    # Optional indicators
-    optional_kw = ("may ", "may.", "peut ", "can ", "is allowed", "optional")
+
+    # 4. Permission / optional indicators
+    optional_kw = ("may ", "may.", "peut ", "is allowed", "optional")
     for kw in optional_kw:
         if kw in t:
             return RuleSeverity.OPTIONAL
-    return RuleSeverity.INFORMATIONAL
+
+    # 5. Default: RECOMMENDED for prescriptive content, INFORMATIONAL for front-matter
+    return RuleSeverity.RECOMMENDED
 
 
 def _extract_keywords_from_text(text: str, max_keywords: int = 5) -> list[str]:
@@ -278,6 +297,32 @@ def _save_ruleset(
         logger.info("Extracted rules saved to: %s", path)
 
 
+# ── Non-rule front-matter sections to skip ─────────────────────────────
+_SKIP_SECTIONS = {
+    "oecd better policies for better lives",
+    "c oecd 2025",
+    "preface",
+    "acknowledgements",
+    "table of contents",
+    "reader's guide",
+    "key differences between english and french",
+}
+
+
+def _is_front_matter(section_title: str) -> bool:
+    """Return True if the section is non-prescriptive front-matter."""
+    parts = [p.strip().lower() for p in section_title.split(">")]
+    # Check if any part of the section path is a known skip section
+    for part in parts:
+        if part in _SKIP_SECTIONS:
+            return True
+        # Also skip sub-sections of the reader's guide
+        for skip in _SKIP_SECTIONS:
+            if skip in part:
+                return True
+    return False
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 # MODE A — Deterministic builder (no LLM)
 # ═════════════════════════════════════════════════════════════════════════════
@@ -290,8 +335,12 @@ def _extract_rules_deterministic(
     Build rules directly from chunks + section hierarchy. No LLM.
 
     Each chunk becomes one PolicyRule. The rule_type (do/dont/unspecified)
-    comes from the section title hierarchy. Severity is detected via keyword
-    heuristics. The rule_text is the verbatim chunk content.
+    comes from the section title hierarchy. Severity is derived from:
+    1. **Do/Don't section** → MANDATORY (strongest structural signal).
+    2. **Modal verbs** in text → mandatory/recommended/optional.
+    3. **Default** → RECOMMENDED for prescriptive content.
+
+    Front-matter sections (Preface, Acknowledgements, etc.) are excluded.
     """
     logger.info("[deterministic] Building rules from %d chunks (no LLM)", len(chunks))
 
@@ -299,17 +348,24 @@ def _extract_rules_deterministic(
     all_tables: list[ReferenceTable] = []
     section_meta: dict[str, tuple[str, str]] = {}  # sid -> (title, parent)
     rule_counter = 0
+    skipped = 0
 
     for chunk in chunks:
         sid = chunk.section_id
         title = chunk.section_title
+
+        # Skip non-prescriptive front-matter
+        if _is_front_matter(title):
+            skipped += 1
+            continue
+
         if sid not in section_meta:
             parts = [p.strip() for p in title.split(">")]
             parent = " > ".join(parts[:-1]) if len(parts) > 1 else ""
             section_meta[sid] = (title, parent)
 
         rule_type = _detect_rule_type_from_section(title)
-        severity = _detect_severity_from_text(chunk.content)
+        severity = _detect_severity_from_text(chunk.content, rule_type=rule_type)
         keywords = _extract_keywords_from_text(chunk.content)
 
         rule_counter += 1
@@ -344,9 +400,11 @@ def _extract_rules_deterministic(
     )
 
     logger.info(
-        "[deterministic] Done: %d rules (%d mandatory, %d recommended, %d optional, %d info), "
-        "rule types: %d do / %d dont / %d unspecified",
+        "[deterministic] Done: %d rules (%d skipped front-matter chunks) | "
+        "%d mandatory, %d recommended, %d optional, %d info | "
+        "types: %d do / %d dont / %d unspecified",
         len(all_rules),
+        skipped,
         sum(1 for r in all_rules if r.severity == RuleSeverity.MANDATORY),
         sum(1 for r in all_rules if r.severity == RuleSeverity.RECOMMENDED),
         sum(1 for r in all_rules if r.severity == RuleSeverity.OPTIONAL),
@@ -397,6 +455,12 @@ def _extract_rules_llm(
 
     for section_id, section_chunks in section_groups.items():
         section_title = section_chunks[0].section_title
+
+        # Skip non-prescriptive front-matter
+        if _is_front_matter(section_title):
+            processed += 1
+            continue
+
         detected_rule_type = _detect_rule_type_from_section(section_title)
 
         parts = [p.strip() for p in section_title.split(">")]
@@ -467,6 +531,11 @@ def _extract_rules_llm(
                         rule_type_enum = detected_rule_type
                     if rule_type_enum == RuleType.UNSPECIFIED and detected_rule_type != RuleType.UNSPECIFIED:
                         rule_type_enum = detected_rule_type
+
+                    # Override: Do/Don't sections are always mandatory,
+                    # regardless of what the LLM classified
+                    if rule_type_enum in (RuleType.DO, RuleType.DONT):
+                        severity_enum = RuleSeverity.MANDATORY
 
                     all_rules.append(PolicyRule(
                         rule_id=f"rule_{rule_counter}",

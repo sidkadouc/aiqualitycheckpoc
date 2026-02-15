@@ -49,6 +49,29 @@ You will receive:
 - Assign a confidence score (0.0–1.0) to each violation reflecting how certain you are.
   Do NOT include any violation with confidence below 0.6.
 
+### Rule Priority & Conflict Resolution
+Rules have different severity levels with this priority order: **mandatory > recommended > informational**.
+
+When checking a paragraph, two or more rules may give CONTRADICTORY advice for the same
+text. Examples of contradictions:
+- Rule A (mandatory): "Capitalise the first letter of a sentence" → wants uppercase.
+  Rule B (informational): "Use sentence case for policy brief titles" → wants lowercase.
+- Rule A says "use title case" while Rule B says "use sentence case".
+- Rule A says "capitalise X" while Rule B says "use lowercase for X".
+- Rule A says "keep the text as-is" while Rule B says "replace the text".
+
+When you detect such contradictions:
+1. **Only report the violation for the higher-severity rule.** A mandatory rule always
+   overrides an informational or recommended rule. A recommended rule overrides informational.
+2. If both have the **same severity**, prefer the **more specific** rule — e.g. a rule about
+   title formatting for a specific document type (policy brief titles) is more specific than a
+   general capitalisation rule.
+3. **Do NOT report both contradictory violations.** The user must not see one finding saying
+   "capitalise this" and another saying "make this lowercase" on the same text.
+4. In the winning violation's explanation, briefly note which other rule was considered but
+   overridden, e.g. "Note: rule_62 (sentence case for titles) does not apply here because
+   rule_59 (mandatory: capitalise sentence starts) takes priority."
+
 ### Fix classification
 For each violation, classify whether it can be fixed automatically in Word:
 - **fix_type** — one of:
@@ -70,7 +93,7 @@ For each violation, classify whether it can be fixed automatically in Word:
       "rule_id": "<rule ID from the provided list>",
       "violated_text": "<exact text portion that violates>",
       "violated_run_indices": [0, 1],
-      "explanation": "<why this violates the rule>",
+      "explanation": "<why this violates the rule — mention overridden rules if applicable>",
       "suggestion": "<concrete fix description>",
       "confidence": 0.95,
       "fix_type": "remove_formatting",
@@ -82,6 +105,7 @@ For each violation, classify whether it can be fixed automatically in Word:
 CRITICAL: Only return violations that are REAL. If a paragraph follows a rule correctly,
 that rule must NOT appear in the violations array. An empty violations array is perfectly
 acceptable and preferred over including false positives.
+When two rules contradict each other on the same text, report ONLY the higher-priority one.
 Do NOT wrap the JSON in markdown fences — return raw JSON only.
 """
 

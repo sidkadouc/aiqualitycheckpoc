@@ -8,7 +8,7 @@ export interface AddinFinding {
   rule_id: string;
   rule_text: string;
   rule_type: "do" | "dont" | "unspecified";
-  severity: "mandatory" | "recommended";
+  severity: "mandatory" | "recommended" | "informational";
 
   doc_paragraph_index: number;
   search_text: string;
@@ -26,6 +26,11 @@ export interface AddinFinding {
   fixable: boolean;
   fix_type: "remove_formatting" | "replace_text" | "apply_style" | "manual";
   fix_value: string;
+
+  /** Rule ID that supersedes this finding (empty if active) */
+  superseded_by: string;
+  /** Human-readable reason for supersession */
+  superseded_reason: string;
 
   highlight_color: string;
 }

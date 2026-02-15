@@ -6,23 +6,22 @@ Pages:       96
 Sections:    296
 Paragraphs:  2158
 Chunks:      296
-Rules:       295
-  - informational: 180
-  - mandatory: 53
-  - optional: 37
-  - recommended: 25
+Rules:       279
+  - mandatory: 144
+  - optional: 8
+  - recommended: 127
 Rule types:
   - do: 67
   - dont: 46
-  - unspecified: 182
+  - unspecified: 166
 Ref tables:  0
-Sections:    294
+Sections:    278
 ------------------------------------------------------------
 Timings:
   1_extraction: 0.0s
-  2_reconstruction: 0.1s
+  2_reconstruction: 0.0s
   3_cleaning: 0.1s
   4_chunking: 0.0s
-  5_rule_extraction: 0.1s
-  TOTAL: 0.3s
+  5_rule_extraction: 0.0s
+  TOTAL: 0.2s
 ============================================================

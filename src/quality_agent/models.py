@@ -129,6 +129,10 @@ class RuleViolation(BaseModel):
     fix_type: str = "manual"  # remove_formatting | replace_text | apply_style | manual
     fix_value: str = ""  # style name, replacement text, or empty for manual fixes
 
+    # Conflict resolution (populated by conflict_resolver)
+    superseded_by: str = ""  # rule_id that overrides this violation
+    superseded_reason: str = ""  # why this violation was overridden
+
 
 class ParagraphResult(BaseModel):
     """Aggregated check result for one paragraph."""
@@ -198,7 +202,9 @@ class AddinFinding(BaseModel):
     fixable: bool = False
     fix_type: str = "manual"  # remove_formatting | replace_text | apply_style | manual
     fix_value: str = ""  # replacement text, style name, or "" for manual
-
+    # Conflict resolution: when another rule supersedes this one
+    superseded_by: str = ""  # rule_id of the winning rule, or "" if active
+    superseded_reason: str = ""  # human-readable reason
     # Highlight colour (Office.js Word.HighlightColor enum value)
     highlight_color: str = "yellow"  # yellow = warning, red = error
 

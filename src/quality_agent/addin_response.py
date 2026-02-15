@@ -130,9 +130,14 @@ def build_addin_response(
                 confidence=v.confidence,
                 section_title=v.section_title,
                 page=v.page,
-                fixable=fixable,
+                fixable=fixable and not v.superseded_by,  # no fix if superseded
                 fix_type=v.fix_type,
                 fix_value=v.fix_value,
+                superseded_by=v.superseded_by,
+                superseded_reason=(
+                    f"Overridden by higher-priority rule {v.superseded_by}"
+                    if v.superseded_by else ""
+                ),
                 highlight_color=color,
             )
             findings.append(finding)

@@ -374,6 +374,23 @@ body {
   font-weight: 600;
 }
 
+/* ── Superseded findings (overridden by a higher-priority rule) ── */
+
+.finding-superseded {
+  opacity: .55;
+  border-left-color: #9ca3af;
+  background: #f8f8f8;
+}
+.finding-superseded .finding-severity {
+  text-decoration: line-through;
+}
+.superseded-notice {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 600;
+  font-style: italic;
+}
+
 /* ── Loading ─────────────────────────────────────────────────────── */
 
 .loading {

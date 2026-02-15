@@ -7,6 +7,7 @@ clipboard format, and JSON request payloads from Word add-ins.
 """
 
 from .addin_response import build_addin_response, build_doc_paragraph_map
+from .conflict_resolver import resolve_contradictions
 from .executors import TokenRateLimiter, get_or_create_rate_limiter
 from .model_router import ModelRouter
 from .openxml_parser import (
@@ -29,4 +30,5 @@ __all__ = [
     "TokenRateLimiter",
     "get_or_create_rate_limiter",
     "ModelRouter",
+    "resolve_contradictions",
 ]

@@ -338,8 +338,14 @@ function renderFindings() {
 
   summaryBar.classList.remove("hidden");
 
+  // Count active (non-superseded) findings
+  const allFindings = currentResponse.paragraphs.flatMap((g) => g.findings);
+  const activeCount = allFindings.filter((f) => !(f as any).superseded_by).length;
+  const supersededCount = allFindings.length - activeCount;
+
   // Summary
-  $summaryTotal().textContent = `${currentResponse.total_findings} findings`;
+  const supersededNote = supersededCount > 0 ? ` (${supersededCount} overridden)` : "";
+  $summaryTotal().textContent = `${activeCount} findings${supersededNote}`;
   $summaryMandatory().textContent = `${currentResponse.summary["mandatory"] || 0} mandatory`;
   $summaryRecommended().textContent = `${currentResponse.summary["recommended"] || 0} recommended`;
 
@@ -434,6 +440,7 @@ function renderTextGroup(searchText: string, findings: AddinFinding[]): string {
 function renderFindingCard(finding: AddinFinding): string {
   const isActive = finding.id === activeFindingId;
   const isStale = staleFindingIds.has(finding.id);
+  const isSuperseded = !!(finding as any).superseded_by;
   const num = findingNumbers.get(finding.id) || 0;
   const TRUNCATE_LEN = 120;
   const ruleText = escapeHtml(finding.rule_text);
@@ -454,9 +461,19 @@ function renderFindingCard(finding: AddinFinding): string {
     ? `<div class="finding-reference">${refParts.join('<span class="ref-sep"> · </span>')}</div>`
     : "";
 
-  // Actions: disable fix button when stale (text changed by a sibling fix)
+  // Determine card state
+  const isDisabled = isStale || isSuperseded;
+
+  // Actions: disable fix button when stale or superseded
   let actionsHtml: string;
-  if (isStale) {
+  if (isSuperseded) {
+    const reason = (finding as any).superseded_reason || `Overridden by ${(finding as any).superseded_by}`;
+    actionsHtml = `
+      <div class="finding-actions">
+        <span class="superseded-notice">↗ ${escapeHtml(reason)}</span>
+        <button class="btn-dismiss" title="Dismiss this finding">Dismiss</button>
+      </div>`;
+  } else if (isStale) {
     actionsHtml = `
       <div class="finding-actions">
         <span class="stale-notice">⚠ Text changed by another fix</span>
@@ -473,8 +490,15 @@ function renderFindingCard(finding: AddinFinding): string {
       </div>`;
   }
 
+  const cardClasses = [
+    "finding-card",
+    isActive ? "active" : "",
+    isStale ? "finding-stale" : "",
+    isSuperseded ? "finding-superseded" : "",
+  ].filter(Boolean).join(" ");
+
   return `
-    <div class="finding-card ${isActive ? "active" : ""} ${isStale ? "finding-stale" : ""}"
+    <div class="${cardClasses}"
          data-finding-id="${finding.id}">
       <div class="finding-header">
         <span class="finding-number">#${num}</span>

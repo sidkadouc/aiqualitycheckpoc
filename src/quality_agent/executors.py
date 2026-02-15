@@ -28,6 +28,7 @@ from agent_framework import Executor, WorkflowContext, handler
 from openai import AsyncAzureOpenAI, RateLimitError
 from typing_extensions import Never
 
+from .conflict_resolver import resolve_contradictions
 from .model_router import ModelRouter
 from .models import (
     BatchCheckResult,
@@ -451,6 +452,9 @@ class ViolationAggregatorExecutor(Executor):
 
         # sort by paragraph index
         paragraph_results = sorted(merged.values(), key=lambda r: r.paragraph_index)
+
+        # ── resolve contradictory violations ───────────────────────────
+        paragraph_results = resolve_contradictions(paragraph_results)
 
         # ── highlight violated runs in OpenXML ─────────────────────────
         highlighted_paragraphs: list[str] = []
