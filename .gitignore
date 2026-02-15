@@ -1,0 +1,6 @@
+*.pyc
+*.pdf
+*/node_modules/*
+*/dist/*
+*.js.map
+.env

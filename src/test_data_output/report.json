@@ -1,0 +1,34 @@
+{
+  "total_paragraphs": 1,
+  "compliant_paragraphs": 0,
+  "non_compliant_paragraphs": 1,
+  "total_violations": 1,
+  "total_rules_checked": 295,
+  "paragraph_results": [
+    {
+      "paragraph_index": 0,
+      "plain_text": "This report was conceptualised and directed by Shardul Agrawala, Head of Division of the Environment and Economy Integration Division (EEI) in the Environment Directorate of the OECD. The OECD Environment Policy Committee (EPOC) was responsible for the oversight of the report. The model-based analysis underpinning the Outlook was a collaboration between OECD and the IMAGE-GLOBIO team at the Netherlands Environmental Assessment Agency (PBL). This report was edited by Shardul Agrawala, Yuko Ishibashi and Rob Dellink (all OECD Environment Directorate).",
+      "is_compliant": false,
+      "violations": [
+        {
+          "rule_id": "rule_151",
+          "rule_text": "· Use the styles in O.N.E Author to organise your information and to format your titles and headings. Do not apply bold, italics or underlining to create a hierarchy of information.",
+          "rule_type": "unspecified",
+          "severity": "mandatory",
+          "paragraph_index": 0,
+          "violated_text": "This report was conceptualised and directed by Shardul Agrawala, Head of Division of the Environment and Economy Integration Division (EEI) in the Environment Directorate of the OECD. The OECD Environment Policy Committee (EPOC) was responsible for the oversight of the report. The model-based analysis underpinning the Outlook was a collaboration between OECD and the IMAGE-GLOBIO team at the Netherlands Environmental Assessment Agency (PBL). This report was edited by Shardul Agrawala, Yuko Ishibashi and Rob Dellink (all OECD Environment Directorate).",
+          "violated_run_indices": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "explanation": "The paragraph is formatted with bold and italic, but no O.N.E Author style is applied. Rule 151 requires the use of O.N.E Author styles for organising information and formatting titles/headings, and prohibits using bold, italics, or underlining to create hierarchy. Here, bold and italic formatting is applied to the entire paragraph without an appropriate style.",
+          "suggestion": "Remove manual bold and italic formatting and apply the correct O.N.E Author style for the paragraph.",
+          "confidence": 0.98
+        }
+      ]
+    }
+  ]
+}

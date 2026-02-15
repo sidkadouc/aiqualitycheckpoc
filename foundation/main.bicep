@@ -50,6 +50,7 @@ param cosmosDbContainerNames object = {
   conversations: 'conversations'
   callSessions: 'callsessions'
   transcriptions: 'transcriptions'
+  policyRules: 'policy-rules'
 }
 
 // SQL Database Configuration

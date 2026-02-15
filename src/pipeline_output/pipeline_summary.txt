@@ -1,0 +1,28 @@
+============================================================
+PIPELINE EXECUTION SUMMARY
+============================================================
+Document:    OECD Styles Guide 2ca15c7e-en
+Pages:       96
+Sections:    296
+Paragraphs:  2158
+Chunks:      296
+Rules:       295
+  - informational: 180
+  - mandatory: 53
+  - optional: 37
+  - recommended: 25
+Rule types:
+  - do: 67
+  - dont: 46
+  - unspecified: 182
+Ref tables:  0
+Sections:    294
+------------------------------------------------------------
+Timings:
+  1_extraction: 0.0s
+  2_reconstruction: 0.1s
+  3_cleaning: 0.1s
+  4_chunking: 0.0s
+  5_rule_extraction: 0.1s
+  TOTAL: 0.3s
+============================================================

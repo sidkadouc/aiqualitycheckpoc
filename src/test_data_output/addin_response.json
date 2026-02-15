@@ -1,0 +1,41 @@
+{
+  "version": "1.0",
+  "total_paragraphs": 1,
+  "total_findings": 1,
+  "summary": {
+    "mandatory": 1
+  },
+  "paragraphs": [
+    {
+      "doc_paragraph_index": 7,
+      "text_preview": "This report was conceptualised and directed by Shardul Agrawala, Head of Division of the Environment and Economy Integr…",
+      "finding_count": 1,
+      "findings": [
+        {
+          "id": "f-7-rule_151-1",
+          "rule_id": "rule_151",
+          "rule_text": "· Use the styles in O.N.E Author to organise your information and to format your titles and headings. Do not apply bold, italics or underlining to create a hierarchy of information.",
+          "rule_type": "unspecified",
+          "severity": "mandatory",
+          "doc_paragraph_index": 7,
+          "search_text": "This report was conceptualised and directed by Shardul Agrawala, Head of Division of the Environment and Economy Integration Division (EEI) in the Env",
+          "run_indices": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "explanation": "The entire paragraph is formatted with bold and italic, but no O.N.E Author style is applied. Rule 151 requires using styles to organise information and to format titles and headings, and prohibits applying bold, italics or underlining to create a hierarchy of information. Here, bold and italic are applied to the body text, which is not permitted.",
+          "suggestion": "Remove all bold and italic formatting from the paragraph and apply the appropriate O.N.E Author style for body text.",
+          "confidence": 0.98,
+          "fixable": true,
+          "fix_type": "remove_formatting",
+          "fix_value": "bold,italic",
+          "highlight_color": "red"
+        }
+      ]
+    }
+  ],
+  "highlighted_ooxml": "<w:p xmlns:ns1=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" ns1:paraId=\"13228962\" ns1:textId=\"77777777\"><w:r><w:rPr><w:highlight w:val=\"yellow\" /></w:rPr><w:t>This report was conceptualised and directed by Shardul Agrawala, Head of Division of the Environment and Economy Integration Division (EEI) in the Environment Directorate of the OECD. The OECD </w:t></w:r><w:r><w:rPr><w:i /><w:iCs /><w:highlight w:val=\"yellow\" /></w:rPr><w:t>Environment Policy Committee (EPOC) was responsible for the oversight of the report. The model-based</w:t></w:r><w:r><w:rPr><w:highlight w:val=\"yellow\" /></w:rPr><w:t> analysis underpinning the </w:t></w:r><w:r><w:rPr><w:b /><w:bCs /><w:highlight w:val=\"yellow\" /></w:rPr><w:t>Outlook was a collaboration between OECD and the IMAGE-GLOBIO team at the Netherlands Environmental Assessment Agency (PBL). This report</w:t></w:r><w:r><w:rPr><w:highlight w:val=\"yellow\" /></w:rPr><w:t> was edited by Shardul Agrawala, Yuko Ishibashi and Rob Dellink (all OECD Environment Directorate).</w:t></w:r></w:p>"
+}

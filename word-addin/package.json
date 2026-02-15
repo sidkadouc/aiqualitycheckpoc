@@ -1,0 +1,30 @@
+{
+  "name": "oecd-quality-checker-addin",
+  "version": "1.0.0",
+  "description": "Word Web Add-in for OECD Style Guide quality checking",
+  "private": true,
+  "scripts": {
+    "dev": "webpack serve --mode development --open",
+    "build": "webpack --mode production",
+    "start": "webpack serve --mode development",
+    "lint": "eslint src/**/*.ts",
+    "sideload": "echo Sideload via Word > Insert > My Add-ins > Upload"
+  },
+  "dependencies": {
+    "@fluentui/web-components": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/office-js": "^1.0.422",
+    "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.3",
+    "mini-css-extract-plugin": "^2.9.2",
+    "office-addin-dev-certs": "^2.0.6",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.7.3",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.0"
+  }
+}

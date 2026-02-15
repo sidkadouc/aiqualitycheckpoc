@@ -1,0 +1,351 @@
+{
+  "total_paragraphs": 15,
+  "compliant_paragraphs": 5,
+  "non_compliant_paragraphs": 10,
+  "total_violations": 17,
+  "total_rules_checked": 295,
+  "paragraph_results": [
+    {
+      "paragraph_index": 0,
+      "plain_text": "Economic Outlook for OECD Countries",
+      "is_compliant": false,
+      "violations": [
+        {
+          "rule_id": "rule_151",
+          "rule_text": "· Use the styles in O.N.E Author to organise your information and to format your titles and headings. Do not apply bold, italics or underlining to create a hierarchy of information.",
+          "rule_type": "unspecified",
+          "severity": "mandatory",
+          "paragraph_index": 0,
+          "violated_text": "Economic Outlook for OECD Countries",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "Bold formatting has been applied to the heading, but rule_151 requires that hierarchy be indicated using O.N.E Author styles, not by applying bold formatting directly. The Heading1 style should be used without manually applying bold.",
+          "suggestion": "Remove manual bold formatting and rely solely on the Heading1 style to indicate hierarchy.",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "paragraph_index": 1,
+      "plain_text": "The Organisation for Economic Co-operation and Development (OECD) publishes regular assessments of the economic outlook for its member countries. This report covers developments from 2024 to 2025.",
+      "is_compliant": false,
+      "violations": [
+        {
+          "rule_id": "rule_1",
+          "rule_text": "This work is published under the responsibility of the Secretary-General of the OECD. The opinions expressed and arguments employed herein do not necessarily reflect the official views of the Member countries of the OECD.\n\nThis document, as well as any data and map included herein, are without prejudice to the status of or sovereignty over any territory, to the delimitation of international frontiers and boundaries and to the name of any territory, city or area.\n\nPlease cite this publication as: OECD (2025), OECD Style Guide (Fourth Edition), OECD Publishing, Paris, https://doi.org/10.1787/2ca15c7e-en.\n\nISBN 978-92-64-57671-1 (print) ISBN 978-92-64-34105-0 (PDF) ISBN 978-92-64-77146-8 (HTML)\n\nPhoto credits: Cover @ OECD. Some rights reserved https://creativecommons.org/licenses/by-nc/3.0/igo/deed.en.\n\nCorrigenda to OECD publications may be found at: https://www.oecd.org/en/publications/support/corrigenda.html.",
+          "rule_type": "unspecified",
+          "severity": "mandatory",
+          "paragraph_index": 1,
+          "violated_text": "The Organisation for Economic Co-operation and Development (OECD) publishes regular assessments of the economic outlook for its member countries. This report covers developments from 2024 to 2025.",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "The mandatory legal and copyright disclaimer required by rule_1 is missing from the paragraph. This disclaimer must be included in all OECD publications.",
+          "suggestion": "Add the full legal and copyright disclaimer text as specified in rule_1 at the beginning or end of the document.",
+          "confidence": 1.0
+        },
+        {
+          "rule_id": "rule_2",
+          "rule_text": ":selected: CC\n\nO BY Attribution 4.0 International (CC BY 4.0)\n\nThis work is made available under the Creative Commons Attribution 4.0 International licence. By using this work, you accept to be bound by the terms of this licence (https://creativecommons.org/licenses/by/4.0/).\n\nAttribution - you must cite the work.\n\nTranslations - you must cite the original work, identify changes to the original and add the following text: In the event of any discrepancy between the original work and the translation, only the text of the original work should be considered valid.\n\nAdaptations - you must cite the original work and add the following text: This is an adaptation of an original work by the OECD. The opinions expressed and arguments employed in this adaptation should not be reported as representing the official views of the OECD or of its Member countries.\n\nThird-party material - the licence does not apply to third-party material in the work. If using such material, you are responsible for obtaining permission from the third party and for any claims of infringement.\n\nYou must not use the OECD logo, visual identity or cover image without express permission or suggest the OECD endorses your use of the work.\n\nAny dispute arising under this licence shall be settled by arbitration in accordance with the Permanent Court of Arbitration (PCA) Arbitration Rules 2012. The seat of arbitration shall be Paris (France). The number of arbitrators shall be one.",
+          "rule_type": "unspecified",
+          "severity": "mandatory",
+          "paragraph_index": 1,
+          "violated_text": "The Organisation for Economic Co-operation and Development (OECD) publishes regular assessments of the economic outlook for its member countries. This report covers developments from 2024 to 2025.",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "The mandatory Creative Commons Attribution 4.0 International licence statement and related instructions are missing from the paragraph. This is required for compliance.",
+          "suggestion": "Add the full CC BY 4.0 licence statement and instructions as specified in rule_2.",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "paragraph_index": 2,
+      "plain_text": "Several factors are at play, e.g. inflation, monetary policy & trade tensions. These dynamics impact GDP growth across regions.",
+      "is_compliant": false,
+      "violations": [
+        {
+          "rule_id": "rule_213",
+          "rule_text": "Don't: x Replace \"and\" with the ampersand in regular text or formal writing.\n\n:selected: The report covers trends in health & education.\n\nThe report covers trends in health and education.",
+          "rule_type": "dont",
+          "severity": "informational",
+          "paragraph_index": 2,
+          "violated_text": "&",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "The ampersand (&) is used in 'monetary policy & trade tensions.' OECD Style Guide rule_213 prohibits replacing 'and' with the ampersand in regular text or formal writing unless it is part of an official name or abbreviation.",
+          "suggestion": "Replace '&' with 'and' so the phrase reads 'monetary policy and trade tensions.'",
+          "confidence": 0.98
+        }
+      ]
+    },
+    {
+      "paragraph_index": 3,
+      "plain_text": "As described in the OECD Economic Surveys, the fiscal stance has significantly shifted since Q3 2024.",
+      "is_compliant": false,
+      "violations": [
+        {
+          "rule_id": "rule_153",
+          "rule_text": ":selected: / Italicise titles of reports, books, journals, newspapers, magazines, databases, and working and policy paper series names. Do not put quotation marks around italicised titles (OECD Employment Outlook 2025; Moby Dick; The Economist).\n\n/ Italicise words or phrases from other languages that are not yet naturalised in English. :selected: The nation's policy of autarky stifled international trade opportunities.\n\n/ Use italics for technical terms or variables upon first mention. :selected: The variable X represents economic output.\n\n/ Write Latin abbreviations in italics, except for those listed in the table \"Latin terms and abbreviations :selected: to put in roman type\".",
+          "rule_type": "do",
+          "severity": "mandatory",
+          "paragraph_index": 3,
+          "violated_text": "OECD Economic Surveys",
+          "violated_run_indices": [
+            1
+          ],
+          "explanation": "The title of the report 'OECD Economic Surveys' is italicised, but it should be italicised only if it is a report, book, journal, newspaper, magazine, database, or working/policy paper series name. However, in the paragraph, the run is italicised but not bold, while the paragraph formatting is bold+italic. The formatting is inconsistent: the title should be italic only, not bold+italic.",
+          "suggestion": "Remove bold formatting from 'OECD Economic Surveys', leaving only italics.",
+          "confidence": 0.95
+        },
+        {
+          "rule_id": "rule_151",
+          "rule_text": "· Use the styles in O.N.E Author to organise your information and to format your titles and headings. Do not apply bold, italics or underlining to create a hierarchy of information.",
+          "rule_type": "unspecified",
+          "severity": "mandatory",
+          "paragraph_index": 3,
+          "violated_text": "As described in the OECD Economic Surveys, the fiscal stance has significantly shifted since Q3 2024.",
+          "violated_run_indices": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "explanation": "The entire paragraph is formatted as bold+italic, but rule_151 mandates that bold and italic formatting should not be used to create hierarchy or for general paragraph text. Styles in O.N.E Author should be used instead. Applying bold+italic to the whole paragraph is non-compliant.",
+          "suggestion": "Remove bold and italic formatting from the paragraph and apply appropriate O.N.E Author styles for hierarchy.",
+          "confidence": 0.98
+        },
+        {
+          "rule_id": "rule_162",
+          "rule_text": "/ Use very sparingly, only if essential for meaning. Bold can be considered aggressive looking if :selected: overused.",
+          "rule_type": "do",
+          "severity": "optional",
+          "paragraph_index": 3,
+          "violated_text": "significantly",
+          "violated_run_indices": [
+            3
+          ],
+          "explanation": "The word 'significantly' is bolded for emphasis, but rule_162 states bold should be used very sparingly and only if essential for meaning. In this context, bolding 'significantly' is unnecessary and aggressive.",
+          "suggestion": "Remove bold formatting from 'significantly' unless it is essential for meaning.",
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "paragraph_index": 4,
+      "plain_text": "The US has seen a marked improvement in employment figures. It's expected that this trend won't reverse in the short term.",
+      "is_compliant": false,
+      "violations": [
+        {
+          "rule_id": "rule_26",
+          "rule_text": ":selected: Always spell out the full form of a term on the first use in a document followed by the abbreviation or acronym in parentheses. Once introduced, use the abbreviation or acronym consistently throughout the text.\n\nAlways double check that the acronym is correct, referring to that used by source institution or entity.\n\n/ Use abbreviations and acronyms that are well known to your audience. If you have many, or if you must use lesser-known ones for technical terms, provide a list of definitions.\n\nOnly use abbreviations or acronyms in figures, infographics and tables if space constraints are significant. Ensure that those used are explained in the surrounding text on first usage.\n\n/ Use uppercase letters without full stops for acronyms, whether they are pronounced as a word (NATO) or read letter by letter (OECD).\n\nThe Organisation for Economic Co-operation and Development (OECD) launched the Programme for International Student Assessment (PISA) in 1997. More than 80 countries participated in PISA in 2023.\n\n/ For acronyms originating from another language, use the widely accepted English name in full and include original name and acronym in parentheses. If the term is used frequently in the text, consider adding a list of all acronyms and abbreviations and use the original acronym in the text. The National Digital Strategy Office (Coordinación de la Estrategia Digital Nacional, CEDN)\n\n/ Use the \" symbol when noting the copyright of an image or photo (@ Author name/Image bank name): @ J. Smith/Shutterstock.com.\n\n/ Use \"the\" before an acronym only if it is read letter by letter (\"the UN\" but \"UNESCO\" or \"ESA\" not \"the ESA\").",
+          "rule_type": "do",
+          "severity": "mandatory",
+          "paragraph_index": 4,
+          "violated_text": "The US",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "The abbreviation 'US' is used without first spelling out the full form ('United States') followed by the abbreviation in parentheses. Rule 26 requires that the full form be spelled out on first use in a document, followed by the abbreviation or acronym in parentheses.",
+          "suggestion": "Change to 'The United States (US) has seen a marked improvement in employment figures.'",
+          "confidence": 0.98
+        },
+        {
+          "rule_id": "rule_78",
+          "rule_text": "Only use the country and territory names and codes included in the list provided by LEG.\n\nUse the long name the first time a country or territory is mentioned in the text of the document, define the short name for what follows, then use the short name thereafter.\n\nThe Republic of Türkiye (hereafter \"Türkiye\") is a Member of the OECD. Türkiye was one of the 20 founders of the OECD in 1960.\n\n/ Add \"the\" before these countries: the Netherlands, the Russian Federation, the Slovak Republic, the United Kingdom and the United States. These countries always take the singular verb form.\n\n/ Use \"Euro area\" when referring to the 20 EU Member States that use the euro.\n\nSpell out country and territory names in full when used as nouns (the United States, the United Kingdom) but use abbreviations when used as adjectives (US companies, UAE delegates, UK unions).\n\n/ Always list countries and territories alphabetically (in English) in text unless LEG's list advises otherwise. Take care to check in LEG's list for any exceptions; for example, the People's Republic of China is listed under \"C\" (China, the People's Republic of). If no letter is specified, the entry is under the first letter of the country or territory's name (\"R\" for the Russian Federation).\n\n/ Countries and territories may be listed non-alphabetically if there is a specific reason for another order, such as a ranking.\n\nThe top three performing countries were Japan, Canada and New Zealand.",
+          "rule_type": "do",
+          "severity": "mandatory",
+          "paragraph_index": 4,
+          "violated_text": "The US",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "Rule 78 requires that country names be spelled out in full when used as nouns (e.g., 'the United States'), and abbreviations (e.g., 'US') only when used as adjectives. Here, 'US' is used as a noun.",
+          "suggestion": "Change to 'The United States has seen a marked improvement in employment figures.'",
+          "confidence": 0.98
+        }
+      ]
+    },
+    {
+      "paragraph_index": 5,
+      "plain_text": "Growth reached 3% in 5 member countries, while 8 others recorded declines of approximately 1.2 percentage points compared to the previous 2 quarters.",
+      "is_compliant": true,
+      "violations": []
+    },
+    {
+      "paragraph_index": 6,
+      "plain_text": "Key recommendation: Governments should prioritise fiscal consolidation while maintaining social safety nets.",
+      "is_compliant": false,
+      "violations": [
+        {
+          "rule_id": "rule_165",
+          "rule_text": "Don't: x Use underlining, unless it appears automatically as part of a URL. :selected:",
+          "rule_type": "dont",
+          "severity": "informational",
+          "paragraph_index": 6,
+          "violated_text": "Key recommendation:",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "Underlining is applied to the text 'Key recommendation:'. Rule 165 prohibits the use of underlining unless it appears automatically as part of a URL.",
+          "suggestion": "Remove the underline formatting from 'Key recommendation:'.",
+          "confidence": 0.98
+        }
+      ]
+    },
+    {
+      "paragraph_index": 7,
+      "plain_text": "It should be noted that the aforementioned policies were implemented by member states in order to facilitate growth. The utilisation of these instruments is being monitored.",
+      "is_compliant": true,
+      "violations": []
+    },
+    {
+      "paragraph_index": 8,
+      "plain_text": "Trade volumes have recovered since the pandemic1, with intra-OECD trade growing by 4.5 per cent per annum.",
+      "is_compliant": true,
+      "violations": []
+    },
+    {
+      "paragraph_index": 9,
+      "plain_text": "Monetary Policy Outlook",
+      "is_compliant": true,
+      "violations": []
+    },
+    {
+      "paragraph_index": 10,
+      "plain_text": "Central banks, i.e. the ECB, the Fed  and the Bank of Japan, have adopted divergent strategies viz. interest rate adjustments, quantitative easing and forward guidance.",
+      "is_compliant": false,
+      "violations": [
+        {
+          "rule_id": "rule_26",
+          "rule_text": ":selected: Always spell out the full form of a term on the first use in a document followed by the abbreviation or acronym in parentheses. Once introduced, use the abbreviation or acronym consistently throughout the text.\n\nAlways double check that the acronym is correct, referring to that used by source institution or entity.\n\n/ Use abbreviations and acronyms that are well known to your audience. If you have many, or if you must use lesser-known ones for technical terms, provide a list of definitions.\n\nOnly use abbreviations or acronyms in figures, infographics and tables if space constraints are significant. Ensure that those used are explained in the surrounding text on first usage.\n\n/ Use uppercase letters without full stops for acronyms, whether they are pronounced as a word (NATO) or read letter by letter (OECD).\n\nThe Organisation for Economic Co-operation and Development (OECD) launched the Programme for International Student Assessment (PISA) in 1997. More than 80 countries participated in PISA in 2023.\n\n/ For acronyms originating from another language, use the widely accepted English name in full and include original name and acronym in parentheses. If the term is used frequently in the text, consider adding a list of all acronyms and abbreviations and use the original acronym in the text. The National Digital Strategy Office (Coordinación de la Estrategia Digital Nacional, CEDN)\n\n/ Use the \" symbol when noting the copyright of an image or photo (@ Author name/Image bank name): @ J. Smith/Shutterstock.com.\n\n/ Use \"the\" before an acronym only if it is read letter by letter (\"the UN\" but \"UNESCO\" or \"ESA\" not \"the ESA\").",
+          "rule_type": "do",
+          "severity": "mandatory",
+          "paragraph_index": 10,
+          "violated_text": "ECB, the Fed  and the Bank of Japan",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "The acronyms 'ECB' and 'Fed' are used without first spelling out their full forms followed by the acronym in parentheses. The rule requires the full form on first use in a document.",
+          "suggestion": "Spell out the full names on first use: 'European Central Bank (ECB), the Federal Reserve (Fed) and the Bank of Japan'.",
+          "confidence": 0.98
+        },
+        {
+          "rule_id": "rule_210",
+          "rule_text": "The Oxford comma, or serial comma, is used before a conjunction (such as \"and\", \"or\") in a list of three or more items. It is more commonly used in American English. OECD usage broadly aligns with British English usage; avoid using the Oxford comma unless necessary for clarity.\n\n· Do not use a comma before the final item in a list. She had soup, bread and salad for lunch.\n\n· Do put a comma before the final item in a list if its omission would cause confusion. They had soup, bread and cheese, and salad for lunch.",
+          "rule_type": "unspecified",
+          "severity": "mandatory",
+          "paragraph_index": 10,
+          "violated_text": "the ECB, the Fed  and the Bank of Japan",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "An Oxford comma is used before 'and' in the list ('the ECB, the Fed  and the Bank of Japan'). OECD usage aligns with British English and avoids the Oxford comma unless necessary for clarity, which is not the case here.",
+          "suggestion": "Remove the comma before 'and': 'the ECB, the Fed and the Bank of Japan'.",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "paragraph_index": 11,
+      "plain_text": "THIS SECTION CONTAINS IMPORTANT POLICY FINDINGS",
+      "is_compliant": false,
+      "violations": [
+        {
+          "rule_id": "rule_59",
+          "rule_text": "· Capitalise the first letter of a word that begins a sentence and all proper nouns (names of events, persons, places, organisations, nationalities and languages).\n\n· For titles and subtitles of books, periodicals and series, use title case.\n\n· For all other titles and subtitles, use sentence case. If a title includes a colon, capitalise the first word following the colon.\n\n. In most cases, specific terms may be capitalised; general terms should never be capitalised.\n\nSee also: Abbreviations, acronyms and signs; Country and territory names, codes and currencies, and territorial disclaimers.",
+          "rule_type": "unspecified",
+          "severity": "mandatory",
+          "paragraph_index": 11,
+          "violated_text": "THIS SECTION CONTAINS IMPORTANT POLICY FINDINGS",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "Rule 59 requires sentence case for section headings and only capitalising the first letter and proper nouns. The entire heading is in ALL_CAPS, which is excessive capitalisation and not compliant with sentence case.",
+          "suggestion": "Change to 'This section contains important policy findings', capitalising only the first letter and any proper nouns.",
+          "confidence": 0.98
+        },
+        {
+          "rule_id": "rule_62",
+          "rule_text": ":selected: / Use title case for report titles and subtitles, the names of projects or initiatives, and country notes when referring to the name of the \"parent\" publication.\n\no If a title includes a colon, capitalise the first word following it. :unselected:\n\no If a title includes a hyphenated adjectival phrase, capitalise both parts. :unselected: The OECD has released a new report, Evidence-Based Decision Making in Health Policy.\n\n/ Use sentence case for the titles and subtitles of report chapters, papers and short content.\n\nFor all other titles and subtitles (including those of boxes, figures, infographics and tables) use sentence case.\n\n/ Use sentence case references to specific components of a report (e.g. chapters, annexes, boxes, figures, infographics and tables).",
+          "rule_type": "do",
+          "severity": "informational",
+          "paragraph_index": 11,
+          "violated_text": "THIS SECTION CONTAINS IMPORTANT POLICY FINDINGS",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "Rule 62 specifies that section headings should use sentence case, not title case or ALL_CAPS. The heading is in ALL_CAPS, violating this rule.",
+          "suggestion": "Format as 'This section contains important policy findings' in sentence case.",
+          "confidence": 0.98
+        },
+        {
+          "rule_id": "rule_151",
+          "rule_text": "· Use the styles in O.N.E Author to organise your information and to format your titles and headings. Do not apply bold, italics or underlining to create a hierarchy of information.",
+          "rule_type": "unspecified",
+          "severity": "mandatory",
+          "paragraph_index": 11,
+          "violated_text": "THIS SECTION CONTAINS IMPORTANT POLICY FINDINGS",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "Rule 151 prohibits using bold, italics, or underlining to create hierarchy. The paragraph is in ALL_CAPS (likely for emphasis/hierarchy) and not using an O.N.E Author style, which is non-compliant.",
+          "suggestion": "Apply the correct O.N.E Author style for section headings and remove ALL_CAPS formatting.",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "paragraph_index": 12,
+      "plain_text": "This paragraph was deleted but track changes were not accepted. The replacement text follows standard formatting.",
+      "is_compliant": false,
+      "violations": [
+        {
+          "rule_id": "rule_151",
+          "rule_text": "· Use the styles in O.N.E Author to organise your information and to format your titles and headings. Do not apply bold, italics or underlining to create a hierarchy of information.",
+          "rule_type": "unspecified",
+          "severity": "mandatory",
+          "paragraph_index": 12,
+          "violated_text": "This paragraph was deleted but track changes were not accepted.",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "Bold, italics, or underlining should not be used to create a hierarchy of information. The paragraph is formatted with strikethrough, which is not a permitted formatting style for content in OECD publications. Strikethrough is not an approved style in O.N.E Author and is not allowed for published content.",
+          "suggestion": "Remove the strikethrough formatting from the text. Accept track changes and delete the paragraph if it is no longer needed.",
+          "confidence": 0.98
+        }
+      ]
+    },
+    {
+      "paragraph_index": 13,
+      "plain_text": "As shown in Figure 1 (OECD, 2024), the unemployment rate in Turkiye fell below 10% for the first time since 2019 (see also Box 2.1 for a detailed breakdown).",
+      "is_compliant": false,
+      "violations": [
+        {
+          "rule_id": "rule_78",
+          "rule_text": "Only use the country and territory names and codes included in the list provided by LEG.\n\nUse the long name the first time a country or territory is mentioned in the text of the document, define the short name for what follows, then use the short name thereafter.\n\nThe Republic of Türkiye (hereafter \"Türkiye\") is a Member of the OECD. Türkiye was one of the 20 founders of the OECD in 1960.\n\n/ Add \"the\" before these countries: the Netherlands, the Russian Federation, the Slovak Republic, the United Kingdom and the United States. These countries always take the singular verb form.\n\n/ Use \"Euro area\" when referring to the 20 EU Member States that use the euro.\n\nSpell out country and territory names in full when used as nouns (the United States, the United Kingdom) but use abbreviations when used as adjectives (US companies, UAE delegates, UK unions).\n\n/ Always list countries and territories alphabetically (in English) in text unless LEG's list advises otherwise. Take care to check in LEG's list for any exceptions; for example, the People's Republic of China is listed under \"C\" (China, the People's Republic of). If no letter is specified, the entry is under the first letter of the country or territory's name (\"R\" for the Russian Federation).\n\n/ Countries and territories may be listed non-alphabetically if there is a specific reason for another order, such as a ranking.\n\nThe top three performing countries were Japan, Canada and New Zealand.",
+          "rule_type": "do",
+          "severity": "mandatory",
+          "paragraph_index": 13,
+          "violated_text": "Turkiye",
+          "violated_run_indices": [
+            0
+          ],
+          "explanation": "The OECD official spelling for the country is 'Türkiye' (with the dotless 'i'), as per LEG's list. The paragraph uses 'Turkiye', which is incorrect.",
+          "suggestion": "Replace 'Turkiye' with 'Türkiye' to comply with OECD official country naming conventions.",
+          "confidence": 0.98
+        }
+      ]
+    },
+    {
+      "paragraph_index": 14,
+      "plain_text": "The policy is not inflationary per se, but its implementation may create short-term price pressures in the energy sector.",
+      "is_compliant": true,
+      "violations": []
+    }
+  ]
+}

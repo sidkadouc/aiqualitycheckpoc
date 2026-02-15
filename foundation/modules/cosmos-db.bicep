@@ -21,6 +21,7 @@ param containerNames object = {
   conversations: 'conversations'
   callSessions: 'callsessions'
   transcriptions: 'transcriptions'
+  policyRules: 'policy-rules'
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
@@ -121,6 +122,24 @@ resource transcriptionsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatab
         indexingMode: 'consistent'
       }
       defaultTtl: -1
+    }
+  }
+}
+
+resource policyRulesContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-11-15' = {
+  parent: cosmosDatabase
+  name: containerNames.policyRules
+  properties: {
+    resource: {
+      id: containerNames.policyRules
+      partitionKey: {
+        paths: ['/section_id']
+        kind: 'Hash'
+      }
+      indexingPolicy: {
+        automatic: true
+        indexingMode: 'consistent'
+      }
     }
   }
 }
