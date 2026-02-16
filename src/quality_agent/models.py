@@ -104,6 +104,31 @@ class RuleInfo(BaseModel):
     keywords: list[str] = Field(default_factory=list)
     page: int | None = None  # page in the PDF style guide
 
+    # ── cached derived fields (computed once, reused across all paragraphs) ──
+    _keywords_lower: list[str] | None = None
+    _section_lower: str | None = None
+    _rule_text_lower: str | None = None
+
+    model_config = {"ignored_types": (type(None),)}
+
+    @property
+    def keywords_lower(self) -> list[str]:
+        if self._keywords_lower is None:
+            object.__setattr__(self, "_keywords_lower", [kw.lower() for kw in self.keywords])
+        return self._keywords_lower  # type: ignore[return-value]
+
+    @property
+    def section_lower(self) -> str:
+        if self._section_lower is None:
+            object.__setattr__(self, "_section_lower", self.section_title.lower())
+        return self._section_lower  # type: ignore[return-value]
+
+    @property
+    def rule_text_lower(self) -> str:
+        if self._rule_text_lower is None:
+            object.__setattr__(self, "_rule_text_lower", self.rule_text.lower())
+        return self._rule_text_lower  # type: ignore[return-value]
+
 
 # ──────────────────────────────────────────────────────────────────────
 # Rule-check result models

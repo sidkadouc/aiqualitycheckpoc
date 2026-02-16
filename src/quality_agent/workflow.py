@@ -193,11 +193,15 @@ async def run_quality_check(
     rules: Sequence[RuleInfo] | None = None,
     rules_json_path: str | Path | None = None,
     router: ModelRouter | None = None,
+    # Databricks primary
+    databricks_host: str | None = None,
+    databricks_token: str | None = None,
+    primary_model: str | None = None,
+    primary_tpm: int | None = None,
+    # Azure OpenAI fallback
     openai_endpoint: str | None = None,
     openai_key: str | None = None,
     model: str = "gpt-4.1",
-    primary_model: str | None = None,
-    primary_tpm: int | None = None,
     fallback_model: str | None = None,
     fallback_tpm: int | None = None,
     num_batches: int = 1,
@@ -212,9 +216,10 @@ async def run_quality_check(
     router:
         Pre-built ``ModelRouter``.  When supplied, endpoint/key/model
         params are ignored and the router is reused across calls.
-    primary_model / primary_tpm / fallback_model / fallback_tpm:
-        When *router* is ``None`` these are used to build one on-the-fly.
-        Defaults: primary=gpt-5.2 @ 500 K TPM, fallback=gpt-4.1 @ 256 K TPM.
+    databricks_host / databricks_token / primary_model / primary_tpm:
+        Databricks serving endpoint config for the Claude primary model.
+    openai_endpoint / openai_key / model / fallback_model / fallback_tpm:
+        Azure OpenAI config for the GPT-4.1 fallback model.
 
     Returns
     -------
@@ -230,29 +235,44 @@ async def run_quality_check(
     if not rules:
         raise ValueError("No rules to check against")
 
-    # resolve Azure OpenAI settings
+    # resolve Databricks settings (primary)
+    db_host = databricks_host or os.environ.get("DATABRICKS_HOST", "")
+    db_token = databricks_token or os.environ.get("DATABRICKS_TOKEN", "")
+
+    # resolve Azure OpenAI settings (fallback)
     endpoint = openai_endpoint or os.environ.get("AZURE_OPENAI_ENDPOINT", "")
     key = openai_key or os.environ.get("AZURE_OPENAI_KEY") or None
 
-    if not endpoint:
+    if not db_host:
         raise ValueError(
-            "Azure OpenAI endpoint required — set AZURE_OPENAI_ENDPOINT or pass openai_endpoint"
+            "Databricks host required — set DATABRICKS_HOST or pass databricks_host"
         )
 
     # ── build or reuse ModelRouter ─────────────────────────────────────
     if router is None:
-        _primary = primary_model or os.environ.get("AZURE_OPENAI_PRIMARY_DEPLOYMENT", "gpt-5.2")
-        _primary_tpm = primary_tpm or int(os.environ.get("AZURE_OPENAI_PRIMARY_TPM", "500000"))
+        _primary = primary_model or os.environ.get("DATABRICKS_MODEL", "databricks-claude-opus-4-6")
+        _primary_tpm = primary_tpm or int(os.environ.get("DATABRICKS_PRIMARY_TPM", "500000"))
+        _primary_conc = int(os.environ.get("DATABRICKS_PRIMARY_CONCURRENCY", "2"))
         _fallback = fallback_model or os.environ.get("AZURE_OPENAI_FALLBACK_DEPLOYMENT", model)
         _fallback_tpm = fallback_tpm or int(os.environ.get("AZURE_OPENAI_FALLBACK_TPM", "256000"))
+        _fallback_conc = int(os.environ.get("AZURE_OPENAI_FALLBACK_CONCURRENCY", "3"))
 
         router = ModelRouter.from_env(
-            endpoint=endpoint,
-            api_key=key,
+            databricks_host=db_host,
+            databricks_token=db_token,
             primary_model=_primary,
             primary_tpm=_primary_tpm,
+            primary_concurrency=_primary_conc,
+            azure_endpoint=endpoint,
+            azure_api_key=key,
             fallback_model=_fallback,
             fallback_tpm=_fallback_tpm,
+            fallback_concurrency=_fallback_conc,
+        )
+        logger.info(
+            "ModelRouter built: primary=%s (%dK TPM, %d conc), fallback=%s (%dK TPM, %d conc)",
+            _primary, _primary_tpm // 1000, _primary_conc,
+            _fallback, _fallback_tpm // 1000, _fallback_conc,
         )
 
     # ── parse input (JSON or raw XML) ──────────────────────────────────
@@ -271,24 +291,24 @@ async def run_quality_check(
         enable_prefilter=enable_prefilter,
     )
 
-    # give the aggregator the paragraph→XML mapping so it can highlight.
-    # When JSON input was used, the pre-parsed paragraphs may have
-    # docParagraphIndex-based indices (e.g. 7) while the
-    # OpenXMLParserExecutor will re-parse cleaned_xml and assign
-    # sequential indices (0, 1, …).  Re-parse now to get matching indices.
-    if json_content is not None:
-        reparsed = parse_openxml(parsed.cleaned_xml, style_map=style_map)
-        aggregator.set_paragraph_xml_map(reparsed.paragraphs)
-    else:
-        aggregator.set_paragraph_xml_map(parsed.paragraphs)
+    # Give the aggregator the paragraph→XML mapping so it can highlight.
+    # We use the already-parsed paragraphs directly — no re-parsing needed.
+    aggregator.set_paragraph_xml_map(parsed.paragraphs)
+    logger.info(
+        "Parsed %d paragraphs (%d chars cleaned XML) — ready for workflow",
+        len(parsed.paragraphs), len(parsed.cleaned_xml),
+    )
 
     # ── run workflow ───────────────────────────────────────────────────
-    # The start executor (OpenXMLParserExecutor) expects a raw XML
-    # string.  When input was JSON, we've already extracted and stripped
-    # the XML — pass the cleaned_xml from the parsed result.
-    workflow_input = parsed.cleaned_xml if json_content is not None else (xml_content or "")
+    # Pass the pre-parsed DocumentCheckRequest directly — the
+    # OpenXMLParserExecutor's passthrough handler forwards it without
+    # re-parsing.
+    workflow_input = parsed  # type: ignore[assignment]
 
-    logger.info("Starting quality-check workflow …")
+    logger.info(
+        "Starting quality-check workflow (%d rules, %d batches) …",
+        len(rules), num_batches,
+    )
     report: QualityCheckReport | None = None
 
     async for event in workflow.run(workflow_input, stream=True):

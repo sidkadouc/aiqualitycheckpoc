@@ -1,9 +1,16 @@
 """
 Multi-deployment model router with proactive token-budget switching.
 
-Manages a **primary** model (GPT-5.2, 500 K TPM by default) and a
-**fallback** model (GPT-4.1, 256 K TPM).  Each deployment gets its own
-sliding-window TokenRateLimiter and concurrency semaphore.
+Manages a **primary** model (Claude Opus 4.6 on Databricks, by default)
+and a **fallback** model (GPT-4.1 on Azure OpenAI).  Each deployment gets
+its own sliding-window TokenRateLimiter and concurrency semaphore.
+
+The primary uses the Databricks model serving endpoint which exposes an
+OpenAI-compatible ``/chat/completions`` API (``AsyncOpenAI`` client,
+``base_url=<host>/serving-endpoints``).
+
+The fallback keeps ``AsyncAzureOpenAI`` so existing Azure deployments
+continue to work as a safety net.
 
 Routing logic
 -------------
@@ -31,7 +38,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from openai import AsyncAzureOpenAI, RateLimitError
+from openai import AsyncAzureOpenAI, AsyncOpenAI, RateLimitError
 
 logger = logging.getLogger(__name__)
 
@@ -113,10 +120,15 @@ class TokenBudget:
 
 @dataclass
 class Deployment:
-    """One Azure OpenAI deployment with its own budget and concurrency."""
+    """One model deployment with its own budget and concurrency.
+
+    The *client* can be either ``AsyncOpenAI`` (Databricks serving
+    endpoint) or ``AsyncAzureOpenAI`` — both expose the same
+    ``chat.completions.create()`` interface.
+    """
 
     name: str
-    client: AsyncAzureOpenAI
+    client: AsyncOpenAI  # AsyncAzureOpenAI is a subclass of AsyncOpenAI
     budget: TokenBudget
     semaphore: asyncio.Semaphore
     priority: int = 0                # lower = preferred
@@ -157,61 +169,94 @@ class ModelRouter:
     def from_env(
         cls,
         *,
-        endpoint: str,
-        api_key: str | None = None,
-        primary_model: str = "gpt-5.2",
+        # ── Databricks primary (Claude) ──────────────────────────────
+        databricks_host: str = "",
+        databricks_token: str = "",
+        primary_model: str = "databricks-claude-opus-4-6",
         primary_tpm: int = 500_000,
-        primary_concurrency: int = 5,
+        primary_concurrency: int = 2,
+        # ── Azure OpenAI fallback ────────────────────────────────────
+        azure_endpoint: str = "",
+        azure_api_key: str | None = None,
         fallback_model: str = "gpt-4.1",
         fallback_tpm: int = 256_000,
         fallback_concurrency: int = 3,
+        # ── legacy (kept for backward compat) ────────────────────────
+        endpoint: str = "",
+        api_key: str | None = None,
     ) -> "ModelRouter":
-        """Build a two-deployment router from common settings."""
+        """Build a two-deployment router.
 
-        def _make_client(ep: str, key: str | None) -> AsyncAzureOpenAI:
-            extra: dict[str, Any] = {}
-            if key:
-                extra["api_key"] = key
-            else:
-                from azure.identity import (
-                    DefaultAzureCredential,
-                    get_bearer_token_provider,
-                )
-                extra["azure_ad_token_provider"] = get_bearer_token_provider(
-                    DefaultAzureCredential(),
-                    "https://cognitiveservices.azure.com/.default",
-                )
-            return AsyncAzureOpenAI(
-                azure_endpoint=ep,
-                api_version="2025-01-01-preview",
-                **extra,
+        Primary  — Claude Opus 4.6 on a Databricks model serving endpoint
+                   (OpenAI-compatible ``/serving-endpoints`` API).
+        Fallback — GPT-4.1 on Azure OpenAI (AsyncAzureOpenAI).
+        """
+
+        # ── primary: Databricks (AsyncOpenAI) ─────────────────────────
+        db_host = databricks_host.rstrip("/")
+        if not db_host:
+            raise ValueError(
+                "Databricks host required — set DATABRICKS_HOST or pass databricks_host"
             )
-
-        client = _make_client(endpoint, api_key)
-        # Both deployments live on the same resource → share the client
-        # (the *model* param on each call selects the deployment).
+        primary_client = AsyncOpenAI(
+            api_key=databricks_token,
+            base_url=f"{db_host}/serving-endpoints",
+        )
 
         primary = Deployment(
             name=primary_model,
-            client=client,
+            client=primary_client,
             budget=TokenBudget(primary_tpm),
             semaphore=asyncio.Semaphore(primary_concurrency),
             priority=0,
         )
-        fallback = Deployment(
-            name=fallback_model,
-            client=client,
-            budget=TokenBudget(fallback_tpm),
-            semaphore=asyncio.Semaphore(fallback_concurrency),
-            priority=1,
-        )
 
-        logger.info(
-            "ModelRouter: primary=%s (%dK TPM, %d conc), fallback=%s (%dK TPM, %d conc)",
-            primary_model, primary_tpm // 1000, primary_concurrency,
-            fallback_model, fallback_tpm // 1000, fallback_concurrency,
-        )
-        return cls([primary, fallback])
+        # ── fallback: Azure OpenAI (AsyncAzureOpenAI) ─────────────────
+        az_ep = azure_endpoint or endpoint  # backward compat
+        az_key = azure_api_key or api_key
+        deployments: list[Deployment] = [primary]
+
+        if az_ep:
+            def _make_azure_client() -> AsyncAzureOpenAI:
+                extra: dict[str, Any] = {}
+                if az_key:
+                    extra["api_key"] = az_key
+                else:
+                    from azure.identity import (
+                        DefaultAzureCredential,
+                        get_bearer_token_provider,
+                    )
+                    extra["azure_ad_token_provider"] = get_bearer_token_provider(
+                        DefaultAzureCredential(),
+                        "https://cognitiveservices.azure.com/.default",
+                    )
+                return AsyncAzureOpenAI(
+                    azure_endpoint=az_ep,
+                    api_version="2025-01-01-preview",
+                    **extra,
+                )
+
+            fallback = Deployment(
+                name=fallback_model,
+                client=_make_azure_client(),
+                budget=TokenBudget(fallback_tpm),
+                semaphore=asyncio.Semaphore(fallback_concurrency),
+                priority=1,
+            )
+            deployments.append(fallback)
+            logger.info(
+                "ModelRouter: primary=%s [Databricks] (%dK TPM, %d conc), "
+                "fallback=%s [Azure] (%dK TPM, %d conc)",
+                primary_model, primary_tpm // 1000, primary_concurrency,
+                fallback_model, fallback_tpm // 1000, fallback_concurrency,
+            )
+        else:
+            logger.info(
+                "ModelRouter: primary=%s [Databricks] (%dK TPM, %d conc), no fallback",
+                primary_model, primary_tpm // 1000, primary_concurrency,
+            )
+
+        return cls(deployments)
 
     # ── properties ─────────────────────────────────────────────────────
 

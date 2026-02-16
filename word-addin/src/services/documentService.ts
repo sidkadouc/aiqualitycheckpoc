@@ -216,11 +216,23 @@ export async function clearHighlight(finding: AddinFinding): Promise<void> {
 
 /**
  * Clear all highlights applied by the add-in (reset document).
+ * We iterate paragraphs rather than setting body.font.highlightColor
+ * because the latter throws InvalidArgument when protected ranges or
+ * content controls are present.
  */
 export async function clearAllHighlights(): Promise<void> {
   await Word.run(async (context) => {
-    const body = context.document.body;
-    body.font.highlightColor = "NoHighlight" as any;
+    const paragraphs = context.document.body.paragraphs;
+    paragraphs.load("font");
+    await context.sync();
+
+    for (const para of paragraphs.items) {
+      try {
+        para.font.highlightColor = "NoHighlight" as any;
+      } catch {
+        // skip protected / read-only paragraphs
+      }
+    }
     await context.sync();
   });
 }

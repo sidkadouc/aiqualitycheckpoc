@@ -174,6 +174,7 @@ class OpenXMLParserExecutor(Executor):
     """Parse raw OpenXML into structured paragraphs and forward downstream.
 
     Input : ``str``   — raw OpenXML content (``<w:document>…</w:document>``).
+           OR ``DocumentCheckRequest`` — pre-parsed paragraphs (passthrough).
     Output: ``DocumentCheckRequest``  — parsed paragraphs with formatting.
     """
 
@@ -190,6 +191,19 @@ class OpenXMLParserExecutor(Executor):
         request = parse_openxml(xml_content)
         logger.info(
             "Extracted %d non-empty paragraphs", len(request.paragraphs)
+        )
+        await ctx.send_message(request)
+
+    @handler
+    async def passthrough(
+        self,
+        request: DocumentCheckRequest,
+        ctx: WorkflowContext[DocumentCheckRequest],
+    ) -> None:
+        """Forward pre-parsed input without re-parsing."""
+        logger.info(
+            "Passthrough: forwarding %d pre-parsed paragraphs",
+            len(request.paragraphs),
         )
         await ctx.send_message(request)
 
@@ -231,27 +245,37 @@ class RuleBatchCheckerExecutor(Executor):
         request: DocumentCheckRequest,
         ctx: WorkflowContext[BatchCheckResult],
     ) -> None:
+        n_para = len(request.paragraphs)
         logger.info(
-            "[%s] Checking %d paragraphs against %d rules",
-            self.id,
-            len(request.paragraphs),
-            len(self._rules),
+            "[%s] Checking %d paragraphs against %d rules (sequential)",
+            self.id, n_para, len(self._rules),
         )
 
-        # fire one LLM call per paragraph, throttled by a semaphore
-        tasks = [
-            self._check_paragraph(p) for p in request.paragraphs
-        ]
-        raw_results: list[ParagraphResult | BaseException] = (
-            await asyncio.gather(*tasks, return_exceptions=True)
-        )
-
+        # Process paragraphs sequentially to avoid overwhelming the
+        # Databricks TPM rate limit.  Each call already uses the
+        # ModelRouter's token budget + semaphore for retries.
         paragraph_results: list[ParagraphResult] = []
-        for res in raw_results:
-            if isinstance(res, BaseException):
-                logger.warning("[%s] LLM call failed: %s", self.id, res)
-            else:
-                paragraph_results.append(res)
+        t0 = time.time()
+        for i, para in enumerate(request.paragraphs, 1):
+            logger.info(
+                "[%s] ── paragraph %d/%d (P%d, %d chars) ──",
+                self.id, i, n_para, para.paragraph_index,
+                len(para.plain_text),
+            )
+            try:
+                result_p = await self._check_paragraph(para)
+                paragraph_results.append(result_p)
+            except Exception as exc:
+                logger.warning(
+                    "[%s] LLM call failed for P%d: %s",
+                    self.id, para.paragraph_index, exc,
+                )
+
+        elapsed = time.time() - t0
+        logger.info(
+            "[%s] Finished %d paragraphs in %.1fs (%.1fs/para)",
+            self.id, n_para, elapsed, elapsed / max(n_para, 1),
+        )
 
         result = BatchCheckResult(
             batch_id=self.id,
@@ -263,38 +287,52 @@ class RuleBatchCheckerExecutor(Executor):
     # ── internal ───────────────────────────────────────────────────────
 
     async def _check_paragraph(self, paragraph: Any) -> ParagraphResult:
-        # ── smart rule pre-filtering ──────────────────────────────────
+        t_start = time.time()
+
+        # ── step 1: smart rule pre-filtering ──────────────────────────
         if self._enable_prefilter:
             active_rules = prefilter_rules(self._rules, paragraph)
+            logger.info(
+                "  P%d step 1/3 prefilter: %d → %d rules (%.0fms)",
+                paragraph.paragraph_index, len(self._rules),
+                len(active_rules), (time.time() - t_start) * 1000,
+            )
         else:
             active_rules = self._rules
 
         if not active_rules:
-            logger.debug("No rules matched P%d — marking compliant", paragraph.paragraph_index)
+            logger.info("  P%d — no rules matched, marking compliant", paragraph.paragraph_index)
             return ParagraphResult(
                 paragraph_index=paragraph.paragraph_index,
                 plain_text=paragraph.plain_text,
                 is_compliant=True,
             )
 
-        # ── decide compact mode based on estimated tokens ─────────────
-        est = estimate_prompt_tokens(paragraph, active_rules)
+        # ── step 2: build prompt ──────────────────────────────────────
+        t_prompt = time.time()
+        user_prompt = build_checker_user_prompt(paragraph, active_rules, compact=False)
+        est = estimate_prompt_tokens(prebuilt_user_prompt=user_prompt)
         compact = est > MAX_RULES_TOKENS
         if compact:
             logger.info(
-                "P%d: ~%d tokens with %d rules — using compact mode",
+                "  P%d: ~%d tokens with %d rules — switching to compact mode",
                 paragraph.paragraph_index, est, len(active_rules),
             )
+            user_prompt = build_checker_user_prompt(paragraph, active_rules, compact=True)
+            est = estimate_prompt_tokens(prebuilt_user_prompt=user_prompt)
 
-        user_prompt = build_checker_user_prompt(paragraph, active_rules, compact=compact)
-
-        logger.debug(
-            "[%s] P%d: %d/%d rules selected, ~%d prompt tokens",
-            self.id, paragraph.paragraph_index,
-            len(active_rules), len(self._rules), est,
+        logger.info(
+            "  P%d step 2/3 prompt: %d rules, ~%d tokens (%.0fms)",
+            paragraph.paragraph_index, len(active_rules), est,
+            (time.time() - t_prompt) * 1000,
         )
 
-        # ── route through ModelRouter (proactive budget switching) ────
+        # ── step 3: LLM call via ModelRouter ─────────────────────────
+        t_llm = time.time()
+        logger.info(
+            "  P%d step 3/3 calling LLM (~%d tokens)…",
+            paragraph.paragraph_index, est,
+        )
         try:
             response, model_used = await self._router.chat_completion(
                 messages=[
@@ -306,7 +344,10 @@ class RuleBatchCheckerExecutor(Executor):
                 response_format={"type": "json_object"},
             )
         except Exception as exc:
-            logger.error("OpenAI call failed for paragraph %d: %s", paragraph.paragraph_index, exc)
+            logger.error(
+                "  P%d LLM call FAILED after %.1fs: %s",
+                paragraph.paragraph_index, time.time() - t_llm, exc,
+            )
             return ParagraphResult(
                 paragraph_index=paragraph.paragraph_index,
                 plain_text=paragraph.plain_text,
@@ -314,9 +355,10 @@ class RuleBatchCheckerExecutor(Executor):
             )
 
         actual_tokens = response.usage.total_tokens if response.usage else 0
-        logger.debug(
-            "P%d: estimated %d, actual %d tokens [%s]",
+        logger.info(
+            "  P%d done: est=%d actual=%d tokens [%s] (%.1fs LLM, %.1fs total)",
             paragraph.paragraph_index, est, actual_tokens, model_used,
+            time.time() - t_llm, time.time() - t_start,
         )
 
         raw_json = response.choices[0].message.content or "{}"

@@ -48,10 +48,10 @@ logger = logging.getLogger(__name__)
 _rules: list[RuleInfo] = []
 _router: ModelRouter | None = None
 
-# Model configuration from environment
-PRIMARY_MODEL = os.environ.get("AZURE_OPENAI_PRIMARY_DEPLOYMENT", "gpt-5.2")
-PRIMARY_TPM = int(os.environ.get("AZURE_OPENAI_PRIMARY_TPM", "500000"))
-PRIMARY_CONCURRENCY = int(os.environ.get("AZURE_OPENAI_PRIMARY_CONCURRENCY", "5"))
+# Model configuration from environment — primary is Databricks Claude
+PRIMARY_MODEL = os.environ.get("DATABRICKS_MODEL", "databricks-claude-opus-4-6")
+PRIMARY_TPM = int(os.environ.get("DATABRICKS_PRIMARY_TPM", "500000"))
+PRIMARY_CONCURRENCY = int(os.environ.get("DATABRICKS_PRIMARY_CONCURRENCY", "2"))
 FALLBACK_MODEL = os.environ.get("AZURE_OPENAI_FALLBACK_DEPLOYMENT", "gpt-4.1")
 FALLBACK_TPM = int(os.environ.get("AZURE_OPENAI_FALLBACK_TPM", "256000"))
 FALLBACK_CONCURRENCY = int(os.environ.get("AZURE_OPENAI_FALLBACK_CONCURRENCY", "3"))
@@ -68,21 +68,25 @@ async def lifespan(app: FastAPI):
     global _rules, _router
     _rules = load_rules_from_json(_RULES_PATH)
 
-    endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
-    key = os.environ.get("AZURE_OPENAI_KEY") or None
+    db_host = os.environ.get("DATABRICKS_HOST", "")
+    db_token = os.environ.get("DATABRICKS_TOKEN", "")
+    az_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
+    az_key = os.environ.get("AZURE_OPENAI_KEY") or None
 
     _router = ModelRouter.from_env(
-        endpoint=endpoint,
-        api_key=key,
+        databricks_host=db_host,
+        databricks_token=db_token,
         primary_model=PRIMARY_MODEL,
         primary_tpm=PRIMARY_TPM,
         primary_concurrency=PRIMARY_CONCURRENCY,
+        azure_endpoint=az_endpoint,
+        azure_api_key=az_key,
         fallback_model=FALLBACK_MODEL,
         fallback_tpm=FALLBACK_TPM,
         fallback_concurrency=FALLBACK_CONCURRENCY,
     )
     logger.info(
-        "Loaded %d rules | primary=%s (%dK TPM) | fallback=%s (%dK TPM)",
+        "Loaded %d rules | primary=%s [Databricks] (%dK TPM) | fallback=%s [Azure] (%dK TPM)",
         len(_rules), PRIMARY_MODEL, PRIMARY_TPM // 1000,
         FALLBACK_MODEL, FALLBACK_TPM // 1000,
     )

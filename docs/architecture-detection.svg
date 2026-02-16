@@ -1,0 +1,276 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 1100" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="hdrGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0d47a1"/>
+      <stop offset="100%" stop-color="#1565c0"/>
+    </linearGradient>
+    <linearGradient id="addinGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e3f2fd"/>
+      <stop offset="100%" stop-color="#bbdefb"/>
+    </linearGradient>
+    <linearGradient id="apiGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff8e1"/>
+      <stop offset="100%" stop-color="#ffecb3"/>
+    </linearGradient>
+    <linearGradient id="agentGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fce4ec"/>
+      <stop offset="100%" stop-color="#f8bbd0"/>
+    </linearGradient>
+    <linearGradient id="llmGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f3e5f5"/>
+      <stop offset="100%" stop-color="#e1bee7"/>
+    </linearGradient>
+    <linearGradient id="resultGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8f5e9"/>
+      <stop offset="100%" stop-color="#c8e6c9"/>
+    </linearGradient>
+    <filter id="sh" x="-3%" y="-3%" width="106%" height="106%">
+      <feDropShadow dx="1" dy="2" stdDeviation="3" flood-opacity="0.12"/>
+    </filter>
+    <marker id="aB" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0,10 3.5,0 7" fill="#1565c0"/>
+    </marker>
+    <marker id="aO" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0,10 3.5,0 7" fill="#e65100"/>
+    </marker>
+    <marker id="aG" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0,10 3.5,0 7" fill="#2e7d32"/>
+    </marker>
+    <marker id="aR" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0,10 3.5,0 7" fill="#c62828"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1060" height="1100" rx="12" fill="#fafafa"/>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="1060" height="64" rx="12" fill="url(#hdrGrad)"/>
+  <rect x="0" y="40" width="1060" height="24" fill="url(#hdrGrad)"/>
+  <text x="530" y="40" text-anchor="middle" fill="white" font-size="22" font-weight="700">Detection Workflow — Quality Check Agent</text>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- LEFT COLUMN: Word Add-in (client) -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+
+  <!-- Section label -->
+  <text x="170" y="95" text-anchor="middle" font-size="13" fill="#0d47a1" font-weight="700" letter-spacing="1.5">WORD ADD-IN (CLIENT)</text>
+
+  <!-- Word Add-in box -->
+  <g transform="translate(30, 108)">
+    <rect width="280" height="220" rx="10" fill="url(#addinGrad)" stroke="#1565c0" stroke-width="1.5" filter="url(#sh)"/>
+    <rect width="280" height="30" rx="10 10 0 0" fill="#1565c0"/>
+    <text x="140" y="20" text-anchor="middle" fill="white" font-size="13" font-weight="600">📝  Microsoft Word — Task Pane</text>
+
+    <!-- User actions -->
+    <text x="16" y="52" font-size="11" fill="#0d47a1" font-weight="700">User clicks:</text>
+    <rect x="16" y="60" width="120" height="24" rx="5" fill="#1565c0"/>
+    <text x="76" y="76" text-anchor="middle" fill="white" font-size="11" font-weight="600">Check Document</text>
+    <rect x="146" y="60" width="120" height="24" rx="5" fill="#1565c0"/>
+    <text x="206" y="76" text-anchor="middle" fill="white" font-size="11" font-weight="600">Check Selection</text>
+
+    <!-- Extract step -->
+    <line x1="140" y1="92" x2="140" y2="104" stroke="#1565c0" stroke-width="1.5" marker-end="url(#aB)"/>
+    <rect x="16" y="108" width="248" height="40" rx="6" fill="white" stroke="#90caf9" stroke-width="1"/>
+    <text x="24" y="125" font-size="11" fill="#333" font-weight="600">1. Extract OOXML</text>
+    <text x="24" y="140" font-size="10" fill="#777">Each paragraph → pkg:package (styles + runs)</text>
+
+    <!-- Build request -->
+    <line x1="140" y1="148" x2="140" y2="158" stroke="#1565c0" stroke-width="1.5" marker-end="url(#aB)"/>
+    <rect x="16" y="162" width="248" height="40" rx="6" fill="white" stroke="#90caf9" stroke-width="1"/>
+    <text x="24" y="179" font-size="11" fill="#333" font-weight="600">2. Build JSON request</text>
+    <text x="24" y="194" font-size="10" fill="#777">{paragraphs: [{ooxml, index, textPreview}]}</text>
+  </g>
+
+  <!-- Arrow: Add-in → API -->
+  <line x1="310" y1="240" x2="378" y2="240" stroke="#e65100" stroke-width="2.5" marker-end="url(#aO)"/>
+  <text x="344" y="232" text-anchor="middle" font-size="10" fill="#e65100" font-weight="600">POST</text>
+  <text x="344" y="254" text-anchor="middle" font-size="9" fill="#e65100">/api/check</text>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- CENTRE COLUMN: FastAPI + Agent Workflow -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+
+  <text x="590" y="95" text-anchor="middle" font-size="13" fill="#e65100" font-weight="700" letter-spacing="1.5">FASTAPI SERVER (BACKEND)</text>
+
+  <!-- API box -->
+  <g transform="translate(383, 108)">
+    <rect width="420" height="60" rx="10" fill="url(#apiGrad)" stroke="#ef6c00" stroke-width="1.5" filter="url(#sh)"/>
+    <rect width="24" height="60" rx="10 0 0 10" fill="#ef6c00"/>
+    <text x="38" y="22" font-size="11" fill="#ef6c00" font-weight="700">API LAYER</text>
+    <text x="38" y="42" font-size="14" fill="#333" font-weight="700">FastAPI  ·  api/main.py</text>
+    <text x="250" y="42" font-size="11" fill="#888">http://localhost:8000</text>
+  </g>
+
+  <!-- Arrow: API → Parse -->
+  <line x1="593" y1="168" x2="593" y2="194" stroke="#e65100" stroke-width="2" marker-end="url(#aO)"/>
+
+  <!-- Parse OOXML -->
+  <g transform="translate(383, 198)">
+    <rect width="420" height="72" rx="10" fill="white" stroke="#ef6c00" stroke-width="1.5" filter="url(#sh)"/>
+    <rect width="6" height="72" rx="3 0 0 3" fill="#ef6c00"/>
+    <text x="20" y="20" font-size="11" fill="#ef6c00" font-weight="700">STEP 1 — PARSE</text>
+    <text x="20" y="38" font-size="13" fill="#333" font-weight="700">parse_json_request()</text>
+    <text x="200" y="38" font-size="11" fill="#888">openxml_parser.py</text>
+    <text x="20" y="54" font-size="10" fill="#777">Extract styles from pkg:package → strip wrapper → ET.parse</text>
+    <text x="20" y="66" font-size="10" fill="#777">→ ParsedParagraph[] with runs, formatting, style info</text>
+  </g>
+
+  <!-- Arrow: Parse → Workflow -->
+  <line x1="593" y1="270" x2="593" y2="296" stroke="#e65100" stroke-width="2" marker-end="url(#aO)"/>
+  <text x="593" y="288" text-anchor="middle" font-size="9" fill="#e65100">DocumentCheckRequest</text>
+
+  <!-- ─── Agent Workflow box (big container) ─── -->
+  <g transform="translate(383, 300)">
+    <rect width="420" height="530" rx="10" fill="#fff5f5" stroke="#c62828" stroke-width="1.5" stroke-dasharray="6,3" filter="url(#sh)"/>
+    <text x="210" y="22" text-anchor="middle" font-size="12" fill="#c62828" font-weight="700" letter-spacing="1">AGENT FRAMEWORK WORKFLOW</text>
+
+    <!-- Passthrough node -->
+    <g transform="translate(20, 35)">
+      <rect width="380" height="48" rx="8" fill="white" stroke="#e57373" stroke-width="1"/>
+      <text x="14" y="20" font-size="11" fill="#c62828" font-weight="700">START NODE</text>
+      <text x="14" y="36" font-size="12" fill="#333" font-weight="600">OpenXMLParserExecutor</text>
+      <text x="210" y="36" font-size="10" fill="#888">passthrough (pre-parsed)</text>
+    </g>
+
+    <!-- Arrow to prefilter -->
+    <line x1="210" y1="83" x2="210" y2="100" stroke="#c62828" stroke-width="1.5" marker-end="url(#aR)"/>
+
+    <!-- Prefilter -->
+    <g transform="translate(20, 104)">
+      <rect width="380" height="64" rx="8" fill="white" stroke="#e57373" stroke-width="1"/>
+      <text x="14" y="18" font-size="11" fill="#c62828" font-weight="700">STEP 2 — PREFILTER</text>
+      <text x="14" y="36" font-size="12" fill="#333" font-weight="600">prefilter_rules()</text>
+      <text x="150" y="36" font-size="10" fill="#888">prompts.py · per paragraph</text>
+      <text x="14" y="52" font-size="10" fill="#777">279 rules → ~60-80 relevant (keywords, formatting, content signals)</text>
+    </g>
+
+    <!-- Arrow to prompt -->
+    <line x1="210" y1="168" x2="210" y2="185" stroke="#c62828" stroke-width="1.5" marker-end="url(#aR)"/>
+
+    <!-- Prompt builder -->
+    <g transform="translate(20, 189)">
+      <rect width="380" height="56" rx="8" fill="white" stroke="#e57373" stroke-width="1"/>
+      <text x="14" y="18" font-size="11" fill="#c62828" font-weight="700">STEP 3 — BUILD PROMPT</text>
+      <text x="14" y="36" font-size="12" fill="#333" font-weight="600">build_checker_user_prompt()</text>
+      <text x="14" y="50" font-size="10" fill="#777">Paragraph + runs detail + style + rules → system + user messages</text>
+    </g>
+
+    <!-- Arrow to LLM -->
+    <line x1="210" y1="245" x2="210" y2="262" stroke="#c62828" stroke-width="1.5" marker-end="url(#aR)"/>
+  </g>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- RIGHT COLUMN: LLM -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+
+  <text x="920" y="95" text-anchor="middle" font-size="13" fill="#7b1fa2" font-weight="700" letter-spacing="1.5">LLM MODELS</text>
+
+  <!-- Databricks Claude -->
+  <g transform="translate(828, 108)">
+    <rect width="202" height="100" rx="10" fill="url(#llmGrad)" stroke="#7b1fa2" stroke-width="1.5" filter="url(#sh)"/>
+    <text x="101" y="22" text-anchor="middle" font-size="11" fill="#7b1fa2" font-weight="700">PRIMARY</text>
+    <text x="101" y="42" text-anchor="middle" font-size="14" fill="#4a148c" font-weight="700">Claude Opus 4.6</text>
+    <text x="101" y="58" text-anchor="middle" font-size="11" fill="#555">Databricks Serving</text>
+    <text x="101" y="74" text-anchor="middle" font-size="10" fill="#888">200K context · sequential</text>
+    <text x="101" y="90" text-anchor="middle" font-size="10" fill="#888">concurrency: 2</text>
+  </g>
+
+  <!-- Azure fallback -->
+  <g transform="translate(828, 225)">
+    <rect width="202" height="90" rx="10" fill="url(#llmGrad)" stroke="#7b1fa2" stroke-width="1.2" stroke-dasharray="4,2" filter="url(#sh)"/>
+    <text x="101" y="22" text-anchor="middle" font-size="11" fill="#7b1fa2" font-weight="600">FALLBACK</text>
+    <text x="101" y="42" text-anchor="middle" font-size="14" fill="#4a148c" font-weight="700">GPT-4.1</text>
+    <text x="101" y="58" text-anchor="middle" font-size="11" fill="#555">Azure OpenAI</text>
+    <text x="101" y="74" text-anchor="middle" font-size="10" fill="#888">256K TPM · concurrency: 3</text>
+  </g>
+
+  <!-- Arrow: ModelRouter → LLM -->
+  <line x1="803" y1="575" x2="828" y2="200" stroke="#7b1fa2" stroke-width="2" marker-end="url(#aR)" stroke-dasharray="5,3"/>
+  <text x="830" y="390" font-size="10" fill="#7b1fa2" font-weight="600" transform="rotate(-68, 830, 390)">ModelRouter</text>
+
+  <!-- LLM call box (inside workflow) -->
+  <g transform="translate(403, 566)">
+    <rect width="380" height="80" rx="8" fill="url(#llmGrad)" stroke="#7b1fa2" stroke-width="1.5"/>
+    <text x="14" y="18" font-size="11" fill="#7b1fa2" font-weight="700">STEP 4 — LLM CALL (sequential, 1 para at a time)</text>
+    <text x="14" y="38" font-size="12" fill="#333" font-weight="600">ModelRouter.chat_completion()</text>
+    <text x="14" y="54" font-size="10" fill="#777">Budget check → route to primary or fallback → retry on 429</text>
+    <text x="14" y="68" font-size="10" fill="#777">→ JSON: {is_compliant, violations: [{rule_id, text, fix_type}]}</text>
+  </g>
+
+  <!-- Arrow: LLM → parse response -->
+  <line x1="593" y1="646" x2="593" y2="662" stroke="#c62828" stroke-width="1.5" marker-end="url(#aR)"/>
+
+  <!-- Parse response -->
+  <g transform="translate(403, 666)">
+    <rect width="380" height="48" rx="8" fill="white" stroke="#e57373" stroke-width="1"/>
+    <text x="14" y="18" font-size="11" fill="#c62828" font-weight="700">STEP 5 — PARSE RESPONSE</text>
+    <text x="14" y="36" font-size="12" fill="#333" font-weight="600">_parse_llm_response()</text>
+    <text x="200" y="36" font-size="10" fill="#888">Filter confidence &lt; 0.6</text>
+  </g>
+
+  <!-- Arrow: parse → aggregator -->
+  <line x1="593" y1="714" x2="593" y2="730" stroke="#c62828" stroke-width="1.5" marker-end="url(#aR)"/>
+
+  <!-- Aggregator -->
+  <g transform="translate(403, 734)">
+    <rect width="380" height="80" rx="8" fill="white" stroke="#e57373" stroke-width="1"/>
+    <text x="14" y="18" font-size="11" fill="#c62828" font-weight="700">STEP 6 — AGGREGATE</text>
+    <text x="14" y="36" font-size="12" fill="#333" font-weight="600">ViolationAggregatorExecutor</text>
+    <text x="14" y="52" font-size="10" fill="#777">Merge batches → Deduplicate (rule_id, paragraph_index)</text>
+    <text x="14" y="64" font-size="10" fill="#777">→ resolve_contradictions() → highlight_violated_runs()</text>
+    <text x="14" y="76" font-size="10" fill="#777">→ QualityCheckReport</text>
+  </g>
+
+  <!-- Arrow: aggregator → response -->
+  <line x1="593" y1="834" x2="593" y2="852" stroke="#2e7d32" stroke-width="2" marker-end="url(#aG)"/>
+
+  <!-- API response -->
+  <g transform="translate(383, 856)">
+    <rect width="420" height="60" rx="10" fill="url(#resultGrad)" stroke="#2e7d32" stroke-width="1.5" filter="url(#sh)"/>
+    <rect width="24" height="60" rx="10 0 0 10" fill="#2e7d32"/>
+    <text x="38" y="22" font-size="11" fill="#2e7d32" font-weight="700">RESPONSE</text>
+    <text x="38" y="42" font-size="13" fill="#333" font-weight="700">AddinResponse → JSON 200 OK</text>
+    <text x="38" y="56" font-size="10" fill="#777">{total_findings, paragraphs: [{findings: [{rule_id, severity, explanation}]}]}</text>
+  </g>
+
+  <!-- Arrow: API → Add-in response -->
+  <line x1="383" y1="886" x2="310" y2="886" stroke="#2e7d32" stroke-width="2.5" marker-end="url(#aG)"/>
+  <text x="344" y="878" text-anchor="middle" font-size="9" fill="#2e7d32">JSON response</text>
+
+  <!-- ─── Add-in Rendering (bottom left) ─── -->
+  <g transform="translate(30, 856)">
+    <rect width="280" height="100" rx="10" fill="url(#addinGrad)" stroke="#1565c0" stroke-width="1.5" filter="url(#sh)"/>
+    <rect width="280" height="30" rx="10 10 0 0" fill="#1565c0"/>
+    <text x="140" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="600">📋  Task Pane — Results</text>
+
+    <text x="16" y="50" font-size="11" fill="#333" font-weight="600">3. Render findings</text>
+    <text x="16" y="64" font-size="10" fill="#777">Group by paragraph → numbered findings</text>
+    <text x="16" y="78" font-size="11" fill="#333" font-weight="600">4. Highlight in Word</text>
+    <text x="16" y="92" font-size="10" fill="#777">Yellow highlight on violated text spans</text>
+  </g>
+
+  <!-- ─── Legend ─── -->
+  <g transform="translate(30, 980)">
+    <rect width="1000" height="100" rx="8" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+    <text x="20" y="20" font-size="12" fill="#555" font-weight="700">Legend</text>
+
+    <rect x="20" y="32" width="14" height="14" rx="3" fill="#bbdefb" stroke="#1565c0" stroke-width="1"/>
+    <text x="40" y="44" font-size="11" fill="#555">Word Add-in (Office.js / TypeScript)</text>
+
+    <rect x="260" y="32" width="14" height="14" rx="3" fill="#ffecb3" stroke="#ef6c00" stroke-width="1"/>
+    <text x="280" y="44" font-size="11" fill="#555">FastAPI server (Python)</text>
+
+    <rect x="460" y="32" width="14" height="14" rx="3" fill="#fff5f5" stroke="#c62828" stroke-width="1" stroke-dasharray="4,2"/>
+    <text x="480" y="44" font-size="11" fill="#555">Agent Framework workflow</text>
+
+    <rect x="700" y="32" width="14" height="14" rx="3" fill="#e1bee7" stroke="#7b1fa2" stroke-width="1"/>
+    <text x="720" y="44" font-size="11" fill="#555">LLM models</text>
+
+    <rect x="840" y="32" width="14" height="14" rx="3" fill="#c8e6c9" stroke="#2e7d32" stroke-width="1"/>
+    <text x="860" y="44" font-size="11" fill="#555">Output</text>
+
+    <text x="20" y="72" font-size="11" fill="#777">Processing: <tspan font-weight="600" fill="#333">Sequential</tspan> — 1 paragraph at a time to respect Databricks TPM limit</text>
+    <text x="20" y="88" font-size="11" fill="#777">Rules: <tspan font-weight="600" fill="#333">279 total</tspan> → prefiltered to ~60-80 per paragraph  ·  Confidence threshold: <tspan font-weight="600" fill="#333">≥ 0.6</tspan>  ·  Priority: <tspan font-weight="600" fill="#333">mandatory > recommended > informational</tspan></text>
+  </g>
+</svg>

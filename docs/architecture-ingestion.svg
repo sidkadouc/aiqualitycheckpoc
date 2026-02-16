@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="headerGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a237e"/>
+      <stop offset="100%" stop-color="#283593"/>
+    </linearGradient>
+    <linearGradient id="azureGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e3f2fd"/>
+      <stop offset="100%" stop-color="#bbdefb"/>
+    </linearGradient>
+    <linearGradient id="localGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f3e5f5"/>
+      <stop offset="100%" stop-color="#e1bee7"/>
+    </linearGradient>
+    <linearGradient id="outputGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8f5e9"/>
+      <stop offset="100%" stop-color="#c8e6c9"/>
+    </linearGradient>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="1" dy="2" stdDeviation="3" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1565c0"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2e7d32"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="1100" rx="12" fill="#fafafa"/>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="900" height="64" rx="12" fill="url(#headerGrad)"/>
+  <rect x="0" y="40" width="900" height="24" fill="url(#headerGrad)"/>
+  <text x="450" y="40" text-anchor="middle" fill="white" font-size="22" font-weight="700">Ingestion Pipeline — OECD Style Guide Extraction</text>
+
+  <!-- ─── Step 0: Input ─── -->
+  <g transform="translate(300, 90)">
+    <rect width="300" height="60" rx="10" fill="#fff3e0" stroke="#ef6c00" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="40" y="26" font-size="13" fill="#e65100" font-weight="600">INPUT</text>
+    <text x="40" y="44" font-size="15" fill="#333" font-weight="700">📄 OECD Style Guide PDF</text>
+    <text x="260" y="44" font-size="11" fill="#888">~150 pages</text>
+  </g>
+
+  <!-- Arrow 0→1 -->
+  <line x1="450" y1="150" x2="450" y2="180" stroke="#1565c0" stroke-width="2" marker-end="url(#arrowBlue)"/>
+
+  <!-- ─── Step 1: Document Intelligence ─── -->
+  <g transform="translate(120, 185)">
+    <rect width="660" height="90" rx="10" fill="url(#azureGrad)" stroke="#1565c0" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="24" height="90" rx="10 0 0 10" fill="#1565c0"/>
+    <text x="38" y="22" font-size="11" fill="#1565c0" font-weight="700" letter-spacing="1">STEP 1 — AZURE</text>
+    <text x="38" y="44" font-size="16" fill="#1a237e" font-weight="700">Azure Document Intelligence</text>
+    <text x="38" y="62" font-size="12" fill="#555">Model: <tspan font-weight="600">prebuilt-layout</tspan>  ·  extract.py</text>
+    <text x="38" y="78" font-size="11" fill="#777">→ Paragraphs, headings, tables, pages, roles (title/body/footer)</text>
+    <text x="610" y="22" font-size="11" fill="#1565c0" font-weight="600">~$0.50-1.50</text>
+    <text x="610" y="52" font-size="20">☁️</text>
+  </g>
+
+  <!-- Arrow 1→2 -->
+  <line x1="450" y1="275" x2="450" y2="305" stroke="#1565c0" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <rect x="406" y="278" width="88" height="20" rx="4" fill="#e3f2fd"/>
+  <text x="450" y="292" text-anchor="middle" font-size="10" fill="#1565c0">01_raw_layout</text>
+
+  <!-- ─── Step 2: Reconstruction ─── -->
+  <g transform="translate(120, 310)">
+    <rect width="660" height="90" rx="10" fill="url(#localGrad)" stroke="#7b1fa2" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="24" height="90" rx="10 0 0 10" fill="#7b1fa2"/>
+    <text x="38" y="22" font-size="11" fill="#7b1fa2" font-weight="700" letter-spacing="1">STEP 2 — LOCAL</text>
+    <text x="38" y="44" font-size="16" fill="#4a148c" font-weight="700">Hierarchical Reconstruction</text>
+    <text x="38" y="62" font-size="12" fill="#555">reconstruct.py  ·  Heading detection → tree structure</text>
+    <text x="38" y="78" font-size="11" fill="#777">→ Sections, sub-sections, parent-child relationships, page ranges</text>
+    <text x="610" y="22" font-size="11" fill="#7b1fa2" font-weight="600">$0 (CPU)</text>
+    <text x="610" y="52" font-size="20">🖥️</text>
+  </g>
+
+  <!-- Arrow 2→3 -->
+  <line x1="450" y1="400" x2="450" y2="430" stroke="#1565c0" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <rect x="388" y="403" width="124" height="20" rx="4" fill="#f3e5f5"/>
+  <text x="450" y="417" text-anchor="middle" font-size="10" fill="#7b1fa2">02_structured_doc</text>
+
+  <!-- ─── Step 3: Cleaning ─── -->
+  <g transform="translate(120, 435)">
+    <rect width="660" height="90" rx="10" fill="url(#localGrad)" stroke="#7b1fa2" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="24" height="90" rx="10 0 0 10" fill="#7b1fa2"/>
+    <text x="38" y="22" font-size="11" fill="#7b1fa2" font-weight="700" letter-spacing="1">STEP 3 — LOCAL</text>
+    <text x="38" y="44" font-size="16" fill="#4a148c" font-weight="700">Cleaning &amp; Normalisation</text>
+    <text x="38" y="62" font-size="12" fill="#555">clean.py  ·  Remove artifacts, fix Unicode, normalise whitespace</text>
+    <text x="38" y="78" font-size="11" fill="#777">→ Clean text preserving formatting intent and structure</text>
+    <text x="610" y="22" font-size="11" fill="#7b1fa2" font-weight="600">$0 (CPU)</text>
+    <text x="610" y="52" font-size="20">🖥️</text>
+  </g>
+
+  <!-- Arrow 3→4 -->
+  <line x1="450" y1="525" x2="450" y2="555" stroke="#1565c0" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <rect x="388" y="528" width="124" height="20" rx="4" fill="#f3e5f5"/>
+  <text x="450" y="542" text-anchor="middle" font-size="10" fill="#7b1fa2">03_cleaned_doc</text>
+
+  <!-- ─── Step 4: Chunking ─── -->
+  <g transform="translate(120, 560)">
+    <rect width="660" height="90" rx="10" fill="url(#localGrad)" stroke="#7b1fa2" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="24" height="90" rx="10 0 0 10" fill="#7b1fa2"/>
+    <text x="38" y="22" font-size="11" fill="#7b1fa2" font-weight="700" letter-spacing="1">STEP 4 — LOCAL</text>
+    <text x="38" y="44" font-size="16" fill="#4a148c" font-weight="700">Semantic Chunking</text>
+    <text x="38" y="62" font-size="12" fill="#555">chunk.py  ·  Section-aligned, ≤800 tokens, never splits mid-paragraph</text>
+    <text x="38" y="78" font-size="11" fill="#777">→ Chunks with section metadata, page ranges, IDs</text>
+    <text x="610" y="22" font-size="11" fill="#7b1fa2" font-weight="600">$0 (CPU)</text>
+    <text x="610" y="52" font-size="20">🖥️</text>
+  </g>
+
+  <!-- Arrow 4→5 -->
+  <line x1="450" y1="650" x2="450" y2="680" stroke="#1565c0" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <rect x="400" y="653" width="100" height="20" rx="4" fill="#f3e5f5"/>
+  <text x="450" y="667" text-anchor="middle" font-size="10" fill="#7b1fa2">04_chunks</text>
+
+  <!-- ─── Step 5: Rule Extraction ─── -->
+  <g transform="translate(120, 685)">
+    <rect width="660" height="100" rx="10" fill="url(#localGrad)" stroke="#7b1fa2" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="24" height="100" rx="10 0 0 10" fill="#7b1fa2"/>
+    <text x="38" y="22" font-size="11" fill="#7b1fa2" font-weight="700" letter-spacing="1">STEP 5 — LOCAL (or LLM)</text>
+    <text x="38" y="44" font-size="16" fill="#4a148c" font-weight="700">Rule Extraction</text>
+    <text x="38" y="62" font-size="12" fill="#555">extract_rules.py  ·  Deterministic (default, $0) or GPT-4.1 (~$2-5)</text>
+    <text x="38" y="78" font-size="11" fill="#777">→ 279 rules: 144 mandatory, 127 recommended, 8 optional</text>
+    <text x="38" y="92" font-size="11" fill="#777">   Each with: rule_id, severity, section, keywords, page ref</text>
+    <text x="610" y="22" font-size="11" fill="#7b1fa2" font-weight="600">$0 / ~$2-5</text>
+    <text x="610" y="52" font-size="20">🧠</text>
+  </g>
+
+  <!-- Arrow 5→6 split -->
+  <line x1="450" y1="785" x2="450" y2="810" stroke="#1565c0" stroke-width="2"/>
+  <rect x="388" y="787" width="124" height="20" rx="4" fill="#f3e5f5"/>
+  <text x="450" y="801" text-anchor="middle" font-size="10" fill="#7b1fa2">05_extracted_rules</text>
+
+  <!-- Split lines -->
+  <line x1="450" y1="810" x2="280" y2="840" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <line x1="450" y1="810" x2="620" y2="840" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowGreen)"/>
+
+  <!-- ─── Step 6a: AI Search ─── -->
+  <g transform="translate(60, 845)">
+    <rect width="320" height="100" rx="10" fill="url(#outputGrad)" stroke="#2e7d32" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="24" height="100" rx="10 0 0 10" fill="#2e7d32"/>
+    <text x="38" y="22" font-size="11" fill="#2e7d32" font-weight="700" letter-spacing="1">STEP 6a — AZURE</text>
+    <text x="38" y="44" font-size="16" fill="#1b5e20" font-weight="700">Azure AI Search</text>
+    <text x="38" y="62" font-size="12" fill="#555">index.py  ·  Hybrid search index</text>
+    <text x="38" y="78" font-size="11" fill="#777">Chunks + embeddings (text-embedding-3-large)</text>
+    <text x="38" y="92" font-size="11" fill="#777">French analyser · vector + keyword</text>
+    <text x="270" y="22" font-size="11" fill="#2e7d32" font-weight="600">~$0.10</text>
+  </g>
+
+  <!-- ─── Step 6b: Cosmos DB ─── -->
+  <g transform="translate(520, 845)">
+    <rect width="320" height="100" rx="10" fill="url(#outputGrad)" stroke="#2e7d32" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="24" height="100" rx="10 0 0 10" fill="#2e7d32"/>
+    <text x="38" y="22" font-size="11" fill="#2e7d32" font-weight="700" letter-spacing="1">STEP 6b — AZURE</text>
+    <text x="38" y="44" font-size="16" fill="#1b5e20" font-weight="700">Cosmos DB</text>
+    <text x="38" y="62" font-size="12" fill="#555">index.py  ·  Structured rule store</text>
+    <text x="38" y="78" font-size="11" fill="#777">Container: policy-rules</text>
+    <text x="38" y="92" font-size="11" fill="#777">Partition key: /section_id</text>
+    <text x="270" y="22" font-size="11" fill="#2e7d32" font-weight="600">~$0.01</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(60, 975)">
+    <rect width="780" height="100" rx="8" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+    <text x="20" y="22" font-size="12" fill="#555" font-weight="700">Legend</text>
+    <rect x="20" y="35" width="16" height="16" rx="3" fill="#bbdefb" stroke="#1565c0" stroke-width="1"/>
+    <text x="44" y="48" font-size="11" fill="#555">Azure cloud service</text>
+    <rect x="200" y="35" width="16" height="16" rx="3" fill="#e1bee7" stroke="#7b1fa2" stroke-width="1"/>
+    <text x="224" y="48" font-size="11" fill="#555">Local processing (CPU, $0)</text>
+    <rect x="420" y="35" width="16" height="16" rx="3" fill="#c8e6c9" stroke="#2e7d32" stroke-width="1"/>
+    <text x="444" y="48" font-size="11" fill="#555">Output storage</text>
+
+    <text x="20" y="76" font-size="11" fill="#777">Pipeline command: <tspan font-family="Consolas, monospace" fill="#333">python run_pipeline.py "OECD Styles Guide.pdf" --skip-indexing -v</tspan></text>
+    <text x="20" y="92" font-size="11" fill="#777">Total cost (deterministic mode): <tspan font-weight="600" fill="#333">~$0.60-1.60</tspan>  ·  Total cost (LLM mode): <tspan font-weight="600" fill="#333">~$2.60-6.60</tspan></text>
+  </g>
+</svg>

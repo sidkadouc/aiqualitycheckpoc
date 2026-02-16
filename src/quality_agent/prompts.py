@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 # Conservative estimate: ~4 chars per token for English text
 CHARS_PER_TOKEN = 4
 # Max tokens we want to spend on rules text inside one prompt.
-# GPT-4.1 has a 1M context window, but keeping prompts lean saves $ and
-# reduces latency.  128K is generous — about 500K chars of rules.
+# Claude Opus 4.6 has a 200K context window; keeping prompts lean saves $
+# and reduces latency.  128K is generous — about 500K chars of rules.
 MAX_RULES_TOKENS = 128_000
 # Below this threshold we send full rule_text; above we truncate.
 RULE_TRUNCATE_LEN = 300
@@ -174,16 +174,15 @@ def _rule_matches(
     has_formatting: bool,
 ) -> bool:
     """Decide whether *rule* is potentially relevant to the paragraph."""
-    section = rule.section_title.lower()
-    rule_text_lower = rule.rule_text.lower()
+    section = rule.section_lower  # cached lowercase
 
     # 1. Rules without keywords are generic → always include
     if not rule.keywords:
         return True
 
     # 2. Keyword match: any keyword appears in paragraph text
-    for kw in rule.keywords:
-        if kw.lower() in text_lower:
+    for kw in rule.keywords_lower:  # cached lowercase
+        if kw in text_lower:
             return True
 
     # 3. Formatting match: if paragraph has bold/italic/etc., include
@@ -208,6 +207,7 @@ def _rule_matches(
 
     # 5. Rule text mentions a formatting flag that the paragraph has
     if has_formatting:
+        rule_text_lower = rule.rule_text_lower  # cached lowercase
         for flag in fmt_lower.split("+"):
             if flag in rule_text_lower:
                 return True
@@ -219,20 +219,33 @@ def _section_matches(section: str, keywords: set[str]) -> bool:
     return any(k in section for k in keywords)
 
 
+# Pre-compiled regex patterns (compiled once at module load, reused per call)
+_RE_DIGITS = re.compile(r"\d")
+_RE_DATE_LIKE = re.compile(
+    r"\b\d{1,2}[/-]\d{1,2}|\b\d{4}\b|january|february|march|april|may|june|july|august|september|october|november|december",
+    re.IGNORECASE,
+)
+_RE_ABBREVIATION = re.compile(r"\b[A-Z]{2,}\b")
+_RE_REFERENCE = re.compile(
+    r"\(\d{4}\)|\bpp?\.\s*\d|\bop\.\s*cit|ibid|et al\.",
+    re.IGNORECASE,
+)
+
+
 def _has_digits(text: str) -> bool:
-    return bool(re.search(r"\d", text))
+    return bool(_RE_DIGITS.search(text))
 
 
 def _has_date_like(text: str) -> bool:
-    return bool(re.search(r"\b\d{1,2}[/-]\d{1,2}|\b\d{4}\b|january|february|march|april|may|june|july|august|september|october|november|december", text, re.IGNORECASE))
+    return bool(_RE_DATE_LIKE.search(text))
 
 
 def _has_abbreviation(text: str) -> bool:
-    return bool(re.search(r"\b[A-Z]{2,}\b", text))
+    return bool(_RE_ABBREVIATION.search(text))
 
 
 def _has_reference_marker(text: str) -> bool:
-    return bool(re.search(r"\(\d{4}\)|\bpp?\.\s*\d|\bop\.\s*cit|ibid|et al\.", text, re.IGNORECASE))
+    return bool(_RE_REFERENCE.search(text))
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -245,13 +258,22 @@ def estimate_tokens(text: str) -> int:
 
 
 def estimate_prompt_tokens(
-    paragraph: ParsedParagraph,
-    rules: Sequence[RuleInfo],
+    paragraph: ParsedParagraph | None = None,
+    rules: Sequence[RuleInfo] | None = None,
+    *,
+    prebuilt_user_prompt: str | None = None,
 ) -> int:
-    """Estimate the total token count for a single checker prompt."""
+    """Estimate the total token count for a single checker prompt.
+
+    When *prebuilt_user_prompt* is supplied the prompt is **not** rebuilt,
+    saving a redundant ``build_checker_user_prompt`` call.
+    """
     sys_tokens = estimate_tokens(RULE_CHECKER_SYSTEM)
-    user_prompt = build_checker_user_prompt(paragraph, rules)
-    user_tokens = estimate_tokens(user_prompt)
+    if prebuilt_user_prompt is not None:
+        user_tokens = estimate_tokens(prebuilt_user_prompt)
+    else:
+        user_prompt = build_checker_user_prompt(paragraph, rules)  # type: ignore[arg-type]
+        user_tokens = estimate_tokens(user_prompt)
     return sys_tokens + user_tokens
 
 
