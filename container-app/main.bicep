@@ -12,6 +12,9 @@ param location string
 @description('Application name for resource naming and tagging')
 param applicationName string = 'oecd-quality'
 
+@description('Resource group name. Defaults to rg-<environmentName>.')
+param resourceGroupName string = 'rg-${environmentName}'
+
 // From Foundation Layer
 @description('Managed Identity ID')
 param managedIdentityId string
@@ -57,7 +60,7 @@ var tags = {
 
 // Resource Group (same as foundation)
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' existing = {
-  name: 'rg-${environmentName}'
+  name: resourceGroupName
 }
 
 // ═══════════════════════════════════════════════════════════════════════

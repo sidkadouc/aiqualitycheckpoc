@@ -10,7 +10,10 @@ param envType string = 'dev'
 param location string
 
 @description('Application name used for resource naming and tagging')
-param applicationName string = 'myapp'
+param applicationName string = 'oecd-quality'
+
+@description('Resource group name. Defaults to rg-<environmentName>. Set to target an existing RG.')
+param resourceGroupName string = 'rg-${environmentName}'
 
 // Azure AI Configuration (secrets stored in Key Vault)
 @secure()
@@ -68,7 +71,7 @@ var tags = {
 
 // Resource Group
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
-  name: 'rg-${environmentName}'
+  name: resourceGroupName
   location: location
   tags: tags
 }

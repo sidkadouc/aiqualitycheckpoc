@@ -21,15 +21,25 @@
 .PARAMETER SkipInfra
     Skip foundation + ACR layers (useful when only re-deploying containers).
 
+.PARAMETER InfraOnly
+    Deploy only infrastructure (foundation + ACR + role assignment) — no Docker
+    build and no Container Apps deployment. Useful for provisioning resources first.
+
 .PARAMETER SkipBuild
     Skip Docker build & push (use existing images in ACR).
+
+.PARAMETER ExistingResourceGroup
+    Name of an existing resource group to deploy into. When set, the foundation
+    layer re-uses this RG instead of creating a new one (rg-<envName>).
 
 .PARAMETER ImageTag
     Docker image tag to use (default: git short SHA or 'latest').
 
 .EXAMPLE
     .\deploy-all.ps1
+    .\deploy-all.ps1 -InfraOnly
     .\deploy-all.ps1 -SkipInfra
+    .\deploy-all.ps1 -ExistingResourceGroup "rg-myteam-dev"
     .\deploy-all.ps1 -ImageTag "v1.2.3"
 #>
 
@@ -37,7 +47,9 @@
 param(
     [string]$EnvFile = ".env",
     [switch]$SkipInfra,
+    [switch]$InfraOnly,
     [switch]$SkipBuild,
+    [string]$ExistingResourceGroup = "",
     [string]$ImageTag = ""
 )
 
@@ -114,11 +126,17 @@ if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
 }
 Write-Ok "az CLI found"
 
-if (-not $SkipBuild -and -not (Get-Command docker -ErrorAction SilentlyContinue)) {
+if ($SkipInfra -and $InfraOnly) {
+    Write-Err "-SkipInfra and -InfraOnly are mutually exclusive."
+    exit 1
+}
+
+$needsDocker = (-not $SkipBuild) -and (-not $InfraOnly)
+if ($needsDocker -and -not (Get-Command docker -ErrorAction SilentlyContinue)) {
     Write-Err "Docker not found. Install Docker Desktop or set -SkipBuild."
     exit 1
 }
-if (-not $SkipBuild) { Write-Ok "Docker found" }
+if ($needsDocker) { Write-Ok "Docker found" }
 
 # ═════════════════════════════════════════════════════════════════════
 # 1 — Load env & set defaults
@@ -135,6 +153,17 @@ $COSMOS_DB      = Get-Env "COSMOS_DB_DATABASE_NAME" "appdata"
 $COSMOS_RULES   = Get-Env "AZURE_COSMOS_RULES_CONTAINER" "policy-rules"
 $SQL_DB         = Get-Env "SQL_DATABASE_NAME" "AppDb"
 
+# Existing resource group: param > env > empty (create new)
+if ([string]::IsNullOrWhiteSpace($ExistingResourceGroup)) {
+    $ExistingResourceGroup = Get-Env "EXISTING_RESOURCE_GROUP" ""
+}
+$USE_EXISTING_RG = -not [string]::IsNullOrWhiteSpace($ExistingResourceGroup)
+if ($USE_EXISTING_RG) {
+    $RG_NAME = $ExistingResourceGroup
+} else {
+    $RG_NAME = "rg-$ENV_NAME"
+}
+
 # Image tag: param > env > git sha > 'latest'
 if ([string]::IsNullOrWhiteSpace($ImageTag)) {
     $ImageTag = Get-Env "IMAGE_TAG" ""
@@ -144,11 +173,25 @@ if ([string]::IsNullOrWhiteSpace($ImageTag)) {
 }
 if ([string]::IsNullOrWhiteSpace($ImageTag)) { $ImageTag = "latest" }
 
-Write-Ok "ENV=$ENV_NAME  LOCATION=$LOCATION  TAG=$ImageTag"
+Write-Ok "ENV=$ENV_NAME  LOCATION=$LOCATION  TAG=$ImageTag  RG=$RG_NAME"
+if ($USE_EXISTING_RG) { Write-Warn "Using existing resource group: $RG_NAME" }
+if ($InfraOnly) { Write-Warn "Infrastructure-only mode (no Docker build / Container Apps)" }
 
 # Set subscription
 Invoke-Az account set --subscription $SUBSCRIPTION
 Write-Ok "Subscription set to $SUBSCRIPTION"
+
+# Validate existing resource group if specified
+if ($USE_EXISTING_RG) {
+    Write-Step "Verifying resource group '$RG_NAME' exists"
+    $rgExists = az group exists --name $RG_NAME 2>$null
+    if ($rgExists -ne "true") {
+        Write-Err "Resource group '$RG_NAME' does not exist in subscription $SUBSCRIPTION."
+        Write-Host "  Create it first or remove -ExistingResourceGroup to let the script create one." -ForegroundColor Gray
+        exit 1
+    }
+    Write-Ok "Resource group '$RG_NAME' confirmed"
+}
 
 # Get current user info for SQL admin (if not specified)
 $PRINCIPAL_ID    = Get-Env "AZURE_PRINCIPAL_ID" ""
@@ -185,6 +228,10 @@ if (-not $SkipInfra) {
                      apiKey="$(Get-Env 'API_KEY')" `
                      serviceApiKey="$(Get-Env 'SERVICE_API_KEY')" `
                      acsConnectionString="$(Get-Env 'ACS_CONNECTION_STRING')" `
+                     jwtKey="$(Get-Env 'JWT_KEY')" `
+                     emailClientId="$(Get-Env 'EMAIL_CLIENT_ID')" `
+                     emailClientSecret="$(Get-Env 'EMAIL_CLIENT_SECRET')" `
+                     resourceGroupName=$RG_NAME `
         --output json | Out-String
 
     Write-Ok "Foundation deployed"
@@ -262,7 +309,7 @@ if (-not $SkipInfra) {
 # ═════════════════════════════════════════════════════════════════════
 # 5 — Docker Build & Push
 # ═════════════════════════════════════════════════════════════════════
-if (-not $SkipBuild) {
+if (-not $SkipBuild -and -not $InfraOnly) {
     Write-Step "Building and pushing Docker images (tag: $ImageTag)"
 
     # Login to ACR
@@ -304,6 +351,8 @@ if (-not $SkipBuild) {
     docker push "${ACR_ENDPOINT}/word-addin:${ImageTag}"
     if ($LASTEXITCODE -ne 0) { Write-Err "Docker push failed for word-addin"; exit 1 }
     Write-Ok "word-addin:$ImageTag pushed"
+} elseif ($InfraOnly) {
+    Write-Warn "Skipping Docker build (--InfraOnly)."
 } else {
     Write-Warn "Skipping Docker build (--SkipBuild). Using existing images."
 }
@@ -311,6 +360,26 @@ if (-not $SkipBuild) {
 # ═════════════════════════════════════════════════════════════════════
 # 6 — Deploy Container Apps
 # ═════════════════════════════════════════════════════════════════════
+if ($InfraOnly) {
+    Write-Step "Infrastructure-only deployment complete. Skipping Container Apps."
+
+    Write-Host ""
+    Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Green
+    Write-Host "  INFRASTRUCTURE DEPLOYMENT COMPLETE" -ForegroundColor Green
+    Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "  Resource Group     : $RG_NAME" -ForegroundColor White
+    Write-Host "  Key Vault          : $KV_NAME" -ForegroundColor White
+    Write-Host "  Cosmos DB          : $COSMOS_ENDPOINT" -ForegroundColor White
+    Write-Host "  Managed Identity   : $MI_CLIENT_ID" -ForegroundColor White
+    Write-Host "  ACR                : $ACR_ENDPOINT" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  To deploy containers later, run:" -ForegroundColor Yellow
+    Write-Host "    .\deploy-all.ps1 -SkipInfra" -ForegroundColor Yellow
+    Write-Host ""
+    exit 0
+}
+
 Write-Step "Deploying Container Apps (quality-api, pdf-pipeline, word-addin)"
 
 $caDeploy = Invoke-Az deployment sub create `
@@ -332,6 +401,7 @@ $caDeploy = Invoke-Az deployment sub create `
                  cosmosDbEndpoint=$COSMOS_ENDPOINT `
                  cosmosDbDatabaseName=$COSMOS_DB `
                  cosmosDbRulesContainerName=$COSMOS_RULES `
+                 resourceGroupName=$RG_NAME `
     --output json | Out-String
 
 Write-Ok "Container Apps deployed"
@@ -343,8 +413,6 @@ $ADDIN_URL       = Get-DeploymentOutput $caDeploy "WORD_ADDIN_URL"
 # 7 — Update Container App image tags (if not placeholder)
 # ═════════════════════════════════════════════════════════════════════
 Write-Step "Updating container app images to $ACR_ENDPOINT/*:$ImageTag"
-
-$RG_NAME = "rg-$ENV_NAME"
 
 Invoke-Az containerapp update `
     --name ca-quality-api `
@@ -374,7 +442,7 @@ Write-Host "══════════════════════�
 Write-Host "  DEPLOYMENT COMPLETE" -ForegroundColor Green
 Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Resource Group     : rg-$ENV_NAME" -ForegroundColor White
+Write-Host "  Resource Group     : $RG_NAME" -ForegroundColor White
 Write-Host "  Quality API        : $QUALITY_API_URL" -ForegroundColor White
 Write-Host "  Word Add-in        : $ADDIN_URL" -ForegroundColor White
 Write-Host "  Key Vault          : $KV_NAME" -ForegroundColor White
