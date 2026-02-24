@@ -40,7 +40,7 @@ from quality_agent.addin_response import build_addin_response, build_doc_paragra
 from quality_agent.executors import TokenRateLimiter, get_or_create_rate_limiter
 from quality_agent.model_router import ModelRouter
 from quality_agent.models import AddinResponse, RuleInfo
-from quality_agent.workflow import load_rules_from_json, run_quality_check
+from quality_agent.workflow import load_rules_from_cosmos, load_rules_from_json, run_quality_check
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,14 @@ FALLBACK_MODEL = os.environ.get("AZURE_OPENAI_FALLBACK_DEPLOYMENT", "gpt-4.1")
 FALLBACK_TPM = int(os.environ.get("AZURE_OPENAI_FALLBACK_TPM", "256000"))
 FALLBACK_CONCURRENCY = int(os.environ.get("AZURE_OPENAI_FALLBACK_CONCURRENCY", "3"))
 
+# Cosmos DB configuration (preferred for production)
+COSMOS_ENDPOINT = os.environ.get("AZURE_COSMOS_ENDPOINT", "")
+COSMOS_DATABASE = os.environ.get("AZURE_COSMOS_DATABASE", "appdata")
+COSMOS_RULES_CONTAINER = os.environ.get("AZURE_COSMOS_RULES_CONTAINER", "policy-rules")
+MANAGED_IDENTITY_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID", "")
+USE_COSMOS_RULES = os.environ.get("USE_COSMOS_RULES", "").lower() in ("true", "1", "yes")
+
+# Fallback: local JSON file (for development)
 _RULES_PATH = os.environ.get(
     "RULES_JSON_PATH",
     str(Path(__file__).resolve().parent.parent / "pipeline_output" / "05_extracted_rules.json"),
@@ -66,7 +74,19 @@ _RULES_PATH = os.environ.get(
 async def lifespan(app: FastAPI):
     """Load rules once at startup so every request reuses them."""
     global _rules, _router
-    _rules = load_rules_from_json(_RULES_PATH)
+
+    # Load rules from Cosmos DB (production) or local JSON (dev fallback)
+    if USE_COSMOS_RULES and COSMOS_ENDPOINT:
+        logger.info("Loading rules from Cosmos DB: %s/%s", COSMOS_DATABASE, COSMOS_RULES_CONTAINER)
+        _rules = load_rules_from_cosmos(
+            cosmos_endpoint=COSMOS_ENDPOINT,
+            database_name=COSMOS_DATABASE,
+            container_name=COSMOS_RULES_CONTAINER,
+            managed_identity_client_id=MANAGED_IDENTITY_CLIENT_ID or None,
+        )
+    else:
+        logger.info("Loading rules from JSON file: %s", _RULES_PATH)
+        _rules = load_rules_from_json(_RULES_PATH)
 
     endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
     key = os.environ.get("AZURE_OPENAI_KEY") or None

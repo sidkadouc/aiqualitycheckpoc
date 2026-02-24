@@ -107,3 +107,6 @@ resource kvSecretsUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' 
     principalType: 'ServicePrincipal'
   }
 }
+
+output name string = keyVault.name
+output uri string = keyVault.properties.vaultUri

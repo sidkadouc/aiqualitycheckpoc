@@ -130,6 +130,15 @@ resource searchAdminKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
+// Store AI Search URI alias (used by container apps)
+resource searchUriSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'azure-aisearch-uri'
+  properties: {
+    value: 'https://${searchService.name}.search.windows.net'
+  }
+}
+
 output name string = searchService.name
 output endpoint string = 'https://${searchService.name}.search.windows.net'
 output principalId string = searchService.identity.principalId

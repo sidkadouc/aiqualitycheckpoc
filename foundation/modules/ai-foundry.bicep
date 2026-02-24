@@ -213,6 +213,24 @@ resource aiFoundryKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
+// Content Understanding endpoint (Document Intelligence via AI Foundry)
+resource contentUnderstandingEndpointSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'content-understanding-endpoint'
+  properties: {
+    value: 'https://${aiFoundry.name}.services.ai.azure.com'
+  }
+}
+
+// AI Foundry endpoint alias
+resource aiFoundryEndpointAliasSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'azure-aifoundry-endpoint'
+  properties: {
+    value: aiFoundry.properties.endpoint
+  }
+}
+
 // ==============================================================================
 // Outputs
 // ==============================================================================

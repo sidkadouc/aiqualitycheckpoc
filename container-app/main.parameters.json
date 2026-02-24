@@ -11,6 +11,9 @@
     "location": {
       "value": "${AZURE_LOCATION}"
     },
+    "applicationName": {
+      "value": "${APPLICATION_NAME=oecd-quality}"
+    },
     "managedIdentityId": {
       "value": "${AZURE_MANAGED_IDENTITY_ID}"
     },
@@ -29,47 +32,17 @@
     "keyVaultName": {
       "value": "${AZURE_KEY_VAULT_NAME}"
     },
-    "containerRegistryName": {
-      "value": "${AZURE_CONTAINER_REGISTRY_NAME}"
-    },
     "containerRegistryEndpoint": {
       "value": "${AZURE_CONTAINER_REGISTRY_ENDPOINT}"
     },
-    "azureOpenAIEndpoint": {
-      "value": "${AZURE_OPENAI_ENDPOINT=}"
+    "cosmosDbEndpoint": {
+      "value": "${AZURE_COSMOS_ENDPOINT}"
     },
-    "azureOpenAIChatModel": {
-      "value": "${AZURE_OPENAI_CHAT_MODEL=gpt-4.1}"
+    "cosmosDbDatabaseName": {
+      "value": "${AZURE_COSMOS_DATABASE=appdata}"
     },
-    "embeddingModel": {
-      "value": "${AZURE_EMBEDDING_MODEL=text-embedding-3-large}"
-    },
-    "azureAISearchUri": {
-      "value": "${AZURE_AISEARCH_ENDPOINT=}"
-    },
-    "aiSearchIndexerName": {
-      "value": "${AISEARCH_INDEXER_NAME=vector-jt-poc-indexer}"
-    },
-    "contentUnderstandingEndpoint": {
-      "value": "${AZURE_CONTENT_UNDERSTANDING_ENDPOINT=}"
-    },
-    "azureAIFoundryEndpoint": {
-      "value": "${AZURE_AI_FOUNDRY_ENDPOINT=}"
-    },
-    "enableDatabaseSeeding": {
-      "value": "${ENABLE_DATABASE_SEEDING=true}"
-    },
-    "tenantId": {
-      "value": "${AZURE_TENANT_ID}"
-    },
-    "senderEmail": {
-      "value": "${EMAIL_SENDER=contact@yaleaf.com}"
-    },
-    "emailTenantId": {
-      "value": "${EMAIL_TENANT_ID=}"
-    },
-    "frontendBaseUrl": {
-      "value": "${FRONTEND_BASE_URL=}"
+    "cosmosDbRulesContainerName": {
+      "value": "${AZURE_COSMOS_RULES_CONTAINER=policy-rules}"
     }
   }
 }

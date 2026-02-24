@@ -10,7 +10,7 @@ param envType string = 'dev'
 param location string
 
 @description('Application name for resource naming and tagging')
-param applicationName string = 'myapp'
+param applicationName string = 'oecd-quality'
 
 // From Foundation Layer
 @description('Managed Identity ID')
@@ -36,16 +36,15 @@ param keyVaultName string
 @description('Container Registry Endpoint')
 param containerRegistryEndpoint string
 
-// Cosmos DB Configuration (should match foundation)
+// Cosmos DB Configuration (from foundation outputs)
+@description('Cosmos DB endpoint')
+param cosmosDbEndpoint string
+
 @description('Cosmos DB database name')
 param cosmosDbDatabaseName string = 'appdata'
 
-@description('Cosmos DB container names')
-param cosmosDbContainerNames object = {
-  conversations: 'conversations'
-  callSessions: 'callsessions'
-  transcriptions: 'transcriptions'
-}
+@description('Cosmos DB rules container name')
+param cosmosDbRulesContainerName string = 'policy-rules'
 
 // Tags
 var tags = {
@@ -61,7 +60,9 @@ resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' existing = {
   name: 'rg-${environmentName}'
 }
 
+// ═══════════════════════════════════════════════════════════════════════
 // Container Apps Environment
+// ═══════════════════════════════════════════════════════════════════════
 module containerAppsEnv 'modules/container-apps-environment.bicep' = {
   name: 'container-apps-env'
   scope: rg
@@ -76,11 +77,11 @@ module containerAppsEnv 'modules/container-apps-environment.bicep' = {
   }
 }
 
-
-
-// Chat API Container App
-module chatApi 'modules/chat-api.bicep' = {
-  name: 'chat-api'
+// ═══════════════════════════════════════════════════════════════════════
+// 1. Quality Checker API — FastAPI (reads rules from Cosmos DB)
+// ═══════════════════════════════════════════════════════════════════════
+module qualityApi 'modules/quality-api.bicep' = {
+  name: 'quality-api'
   scope: rg
   params: {
     location: location
@@ -93,16 +94,40 @@ module chatApi 'modules/chat-api.bicep' = {
     keyVaultName: keyVaultName
     appInsightsConnectionString: appInsightsConnectionString
     applicationName: applicationName
+    cosmosDbEndpoint: cosmosDbEndpoint
     cosmosDbDatabaseName: cosmosDbDatabaseName
-    cosmosDbContainerNames: cosmosDbContainerNames
+    cosmosDbRulesContainerName: cosmosDbRulesContainerName
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// 2. PDF Pipeline — extracts rules and stores them in Cosmos DB
+// ═══════════════════════════════════════════════════════════════════════
+module pdfPipeline 'modules/pdf-pipeline.bicep' = {
+  name: 'pdf-pipeline'
+  scope: rg
+  params: {
+    location: location
+    envType: envType
+    tags: tags
+    containerAppsEnvironmentId: containerAppsEnv.outputs.id
+    managedIdentityId: managedIdentityId
+    managedIdentityClientId: managedIdentityClientId
+    containerRegistryEndpoint: containerRegistryEndpoint
+    keyVaultName: keyVaultName
+    appInsightsConnectionString: appInsightsConnectionString
+    applicationName: applicationName
+    cosmosDbEndpoint: cosmosDbEndpoint
+    cosmosDbDatabaseName: cosmosDbDatabaseName
+    cosmosDbRulesContainerName: cosmosDbRulesContainerName
+  }
+}
 
-
-// Frontend Container App
-module frontend 'modules/frontend.bicep' = {
-  name: 'frontend'
+// ═══════════════════════════════════════════════════════════════════════
+// 3. Word Add-in — static SPA served via nginx
+// ═══════════════════════════════════════════════════════════════════════
+module wordAddin 'modules/word-addin.bicep' = {
+  name: 'word-addin'
   scope: rg
   params: {
     location: location
@@ -113,13 +138,14 @@ module frontend 'modules/frontend.bicep' = {
     managedIdentityClientId: managedIdentityClientId
     containerRegistryEndpoint: containerRegistryEndpoint
     appInsightsConnectionString: appInsightsConnectionString
-    chatApiUrl: chatApi.outputs.url
-    keyVaultName: keyVaultName
     applicationName: applicationName
-    cosmosDbDatabaseName: cosmosDbDatabaseName
-    cosmosDbContainerNames: cosmosDbContainerNames
+    qualityApiUrl: qualityApi.outputs.url // inject API URL into add-in config
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
 // Outputs
+// ═══════════════════════════════════════════════════════════════════════
 output AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = containerAppsEnv.outputs.id
+output QUALITY_API_URL string = qualityApi.outputs.url
+output WORD_ADDIN_URL string = wordAddin.outputs.url

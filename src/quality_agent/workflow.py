@@ -80,6 +80,76 @@ def load_rules_from_json(path: str | Path) -> list[RuleInfo]:
     return rules
 
 
+def load_rules_from_cosmos(
+    cosmos_endpoint: str,
+    database_name: str = "appdata",
+    container_name: str = "policy-rules",
+    credential: Any | None = None,
+    managed_identity_client_id: str | None = None,
+) -> list[RuleInfo]:
+    """Load ``RuleInfo`` objects from Azure Cosmos DB.
+
+    Uses managed identity (``DefaultAzureCredential``) when no explicit
+    credential is supplied — ideal for production on Container Apps where
+    the user-assigned managed identity has the *Cosmos DB Data Contributor*
+    role.
+
+    Parameters
+    ----------
+    cosmos_endpoint:
+        Cosmos DB account URI  (``https://<account>.documents.azure.com:443/``).
+    database_name:
+        Database name (default ``appdata``).
+    container_name:
+        Container name (default ``policy-rules``).
+    credential:
+        Explicit credential or key string.  If ``None``, uses
+        ``DefaultAzureCredential`` (managed identity).
+    managed_identity_client_id:
+        When using a user-assigned managed identity, the client ID to
+        scope ``DefaultAzureCredential``.
+    """
+    from azure.cosmos import CosmosClient
+
+    if credential is None:
+        from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
+
+        if managed_identity_client_id:
+            credential = ManagedIdentityCredential(
+                client_id=managed_identity_client_id,
+            )
+        else:
+            credential = DefaultAzureCredential()
+
+    client = CosmosClient(cosmos_endpoint, credential=credential)
+    database = client.get_database_client(database_name)
+    container = database.get_container_client(container_name)
+
+    raw_rules = list(
+        container.query_items(
+            query="SELECT * FROM c WHERE c.type != 'ruleset_summary' AND IS_DEFINED(c.rule_id)",
+            enable_cross_partition_query=True,
+        )
+    )
+
+    rules: list[RuleInfo] = []
+    for r in raw_rules:
+        rules.append(
+            RuleInfo(
+                rule_id=r.get("rule_id", ""),
+                rule_text=r.get("rule_text", ""),
+                rule_summary=r.get("rule_summary", ""),
+                rule_type=r.get("rule_type", "unspecified"),
+                severity=r.get("severity", "recommended"),
+                section_title=r.get("section_title", ""),
+                keywords=r.get("keywords", []),
+                page=r.get("page"),
+            )
+        )
+    logger.info("Loaded %d rules from Cosmos DB (%s/%s)", len(rules), database_name, container_name)
+    return rules
+
+
 def _split_rules(
     rules: Sequence[RuleInfo],
     num_batches: int = 1,
