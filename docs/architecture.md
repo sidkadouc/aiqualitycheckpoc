@@ -6,7 +6,7 @@ End-to-end view of how a PDF policy becomes a Word add-in that flags non-conform
 
 ```
                                                        ┌─────────────────────────┐
-PDF (OECD ~150 pages)                                  │  Word document          │
+PDF (~150 pages)                                       │  Word document          │
         │                                              │  (user edits live)      │
         ▼                                              └────────────┬────────────┘
 ┌───────────────────────────────┐                                   │ paragraph

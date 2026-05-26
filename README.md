@@ -1,6 +1,6 @@
-# OECD AI Quality Checker — Word Add-in PoC
+# AI Quality Checker — Word Add-in PoC
 
-A Word add-in that checks paragraphs against an editorial rulebook extracted from an OECD policy PDF, powered by Azure AI Foundry, AI Search and Cosmos DB.
+A Word add-in that checks paragraphs against an editorial rulebook extracted from a policy PDF, powered by Azure AI Foundry, AI Search and Cosmos DB.
 
 ## What this is
 

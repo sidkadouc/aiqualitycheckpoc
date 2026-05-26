@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────
-// quality-api.bicep — OECD Quality Checker API (FastAPI)
+// quality-api.bicep — AI Quality Checker API (FastAPI)
 // Container App with managed identity access to Cosmos DB, AI Search,
 // Azure OpenAI, and Key Vault.
 // ─────────────────────────────────────────────────────────────────────
@@ -26,7 +26,7 @@ param appInsightsConnectionString string
 param envType string = 'dev'
 
 @description('Application name for service naming')
-param applicationName string = 'oecd-quality'
+param applicationName string = 'ai-quality'
 
 // Cosmos DB
 @description('Cosmos DB endpoint')

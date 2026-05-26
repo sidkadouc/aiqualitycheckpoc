@@ -1,9 +1,9 @@
 ---
 name: infra-deployment
-description: 'Deploy or modify the OECD Quality Checker Azure infrastructure with Bicep. Use for: provisioning the stack (AI Foundry, AI Search, Cosmos DB, Storage, Key Vault, Container Apps, VNet, private endpoints, ACR); adding a new container app or Azure service; wiring managed-identity RBAC (UAMI / SAMI); enabling or troubleshooting private endpoints and private DNS zones; changing the deployment region or Foundry model deployments; debugging "image pull failed", "DNS resolution", "AcrPull", "Cognitive Services 401/403", "Cosmos data-plane 403" errors during deployment.'
+description: 'Deploy or modify the AI Quality Checker Azure infrastructure with Bicep. Use for: provisioning the stack (AI Foundry, AI Search, Cosmos DB, Storage, Key Vault, Container Apps, VNet, private endpoints, ACR); adding a new container app or Azure service; wiring managed-identity RBAC (UAMI / SAMI); enabling or troubleshooting private endpoints and private DNS zones; changing the deployment region or Foundry model deployments; debugging "image pull failed", "DNS resolution", "AcrPull", "Cognitive Services 401/403", "Cosmos data-plane 403" errors during deployment.'
 ---
 
-# Infra Deployment — OECD Quality Checker
+# Infra Deployment — AI Quality Checker
 
 ## When to use
 

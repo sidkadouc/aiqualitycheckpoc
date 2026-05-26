@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────
-// word-addin.bicep — OECD Word Add-in (static SPA via nginx)
+// word-addin.bicep — Word Add-in (static SPA via nginx)
 // Container App serving the built Word add-in assets.
 // ─────────────────────────────────────────────────────────────────────
 
@@ -22,7 +22,7 @@ param appInsightsConnectionString string
 param envType string = 'dev'
 
 @description('Application name for service naming')
-param applicationName string = 'oecd-quality'
+param applicationName string = 'ai-quality'
 
 @description('Quality API URL (for add-in backend calls)')
 param qualityApiUrl string

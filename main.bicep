@@ -1,5 +1,5 @@
 // ==============================================================================
-// OECD Quality Checker — consolidated deployment
+// AI Quality Checker — consolidated deployment
 // ------------------------------------------------------------------------------
 // Single-file deployment for the whole stack into a pre-created resource group:
 //   - Managed identity, monitoring, Key Vault, Storage, Cosmos DB,
@@ -35,7 +35,7 @@ param location string = resourceGroup().location
 param aiFoundryLocation string = 'swedencentral'
 
 @description('Application name (used in tags + child resource naming).')
-param applicationName string = 'oecd-quality'
+param applicationName string = 'ai-quality'
 
 @description('Deployment user object ID (used to grant Foundry data-plane access for local debug). Leave empty in CI.')
 param currentUserPrincipalId string = ''

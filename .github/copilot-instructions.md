@@ -1,4 +1,4 @@
-# OECD Quality Checker — Project Guidelines
+# AI Quality Checker — Project Guidelines
 
 PoC with three parts:
 - **PDF extraction pipeline** (Python, `src/pdf_pipeline/`) — runs Azure Document Intelligence + chunking + indexing into AI Search and Cosmos DB

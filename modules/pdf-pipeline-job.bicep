@@ -25,7 +25,7 @@ param appInsightsConnectionString string
 param envType string = 'dev'
 
 @description('Application name for service naming')
-param applicationName string = 'oecd-quality'
+param applicationName string = 'ai-quality'
 
 @description('Cosmos DB endpoint')
 param cosmosDbEndpoint string

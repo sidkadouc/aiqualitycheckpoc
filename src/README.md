@@ -1,4 +1,4 @@
-# OECD AI Quality Checker — PoC
+# AI Quality Checker — PoC
 
 Three-part application: a **PDF extraction pipeline**, a **FastAPI quality-check API**, and a **Word Web Add-in**.
 
@@ -158,7 +158,7 @@ curl http://localhost:8000/api/rules/summary
 
 ## Part 2 — PDF Extraction Pipeline
 
-Extracts rules from an OECD PDF, creates searchable chunks, and indexes them.
+Extracts rules from a policy PDF, creates searchable chunks, and indexes them.
 
 ### 2.1 Setup
 
@@ -206,7 +206,7 @@ AZURE_STORAGE_CONTAINER=documents
 cd src
 
 # Full run
-python run_pipeline.py path/to/oecd_document.pdf --verbose
+python run_pipeline.py path/to/document.pdf --verbose
 
 # Common options
 python run_pipeline.py document.pdf --output-dir pipeline_output --verbose
@@ -313,7 +313,7 @@ The webpack dev server starts on **https://localhost:3000** with:
 1. Open **Word Desktop** (Microsoft 365).
 2. Go to **Insert** → **Add-ins** → **My Add-ins** → **Upload My Add-in**.
 3. Select `word-addin/manifest.xml`.
-4. The task pane should appear in the ribbon under **OECD Style Checker**.
+4. The task pane should appear in the ribbon under **AI Quality Checker**.
 
 > The manifest already points to `https://localhost:3000` — no changes needed for local dev.
 
@@ -346,7 +346,7 @@ Terminal 3 — Pipeline (one-off)
 ─────────────────────────
 cd src
 .venv\Scripts\Activate.ps1
-python run_pipeline.py path/to/oecd_rules.pdf --verbose
+python run_pipeline.py path/to/style_rules.pdf --verbose
 ```
 
 Then sideload the add-in in Word. The add-in calls `http://localhost:8000`, which the API serves.

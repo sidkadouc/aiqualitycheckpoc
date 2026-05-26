@@ -1,6 +1,6 @@
-# OECD Quality Checker — Word Web Add-in
+# AI Quality Checker — Word Web Add-in
 
-A Word Web Add-in that checks document content against OECD Style Guide rules in real time.
+A Word Web Add-in that checks document content against editorial style rules in real time.
 
 ## Architecture
 
