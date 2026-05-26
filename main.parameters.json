@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "${AZURE_ENV_NAME=dev}"
+    },
+    "location": {
+      "value": "${AZURE_LOCATION=francecentral}"
+    },
+    "aiFoundryLocation": {
+      "value": "${AZURE_AI_FOUNDRY_LOCATION=swedencentral}"
+    },
+    "applicationName": {
+      "value": "${APPLICATION_NAME=oecd-quality}"
+    },
+    "currentUserPrincipalId": {
+      "value": "${AZURE_PRINCIPAL_ID=}"
+    },
+    "vnetAddressPrefix": {
+      "value": "${VNET_ADDRESS_PREFIX=10.10.0.0/16}"
+    },
+    "acaInfraSubnetPrefix": {
+      "value": "${ACA_INFRA_SUBNET_PREFIX=10.10.0.0/23}"
+    },
+    "privateEndpointSubnetPrefix": {
+      "value": "${PE_SUBNET_PREFIX=10.10.2.0/27}"
+    },
+    "cosmosDbDatabaseName": {
+      "value": "${COSMOS_DB_DATABASE_NAME=appdata}"
+    },
+    "imageTag": {
+      "value": "${IMAGE_TAG=latest}"
+    },
+    "deployWordAddin": {
+      "value": true
+    }
+  }
+}

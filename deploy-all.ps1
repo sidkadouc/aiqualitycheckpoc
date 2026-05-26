@@ -320,7 +320,7 @@ if (-not $SkipBuild -and -not $InfraOnly) {
     Write-Host "  Building quality-api…" -ForegroundColor Gray
     docker build `
         -t "${ACR_ENDPOINT}/quality-api:${ImageTag}" `
-        -f "$ROOT/src/Dockerfile.api" `
+        -f "$ROOT/src/api/Dockerfile" `
         "$ROOT/src"
     if ($LASTEXITCODE -ne 0) { Write-Err "Docker build failed for quality-api"; exit 1 }
 
@@ -332,7 +332,7 @@ if (-not $SkipBuild -and -not $InfraOnly) {
     Write-Host "  Building pdf-pipeline…" -ForegroundColor Gray
     docker build `
         -t "${ACR_ENDPOINT}/pdf-pipeline:${ImageTag}" `
-        -f "$ROOT/src/Dockerfile.pipeline" `
+        -f "$ROOT/src/pdf_pipeline/Dockerfile" `
         "$ROOT/src"
     if ($LASTEXITCODE -ne 0) { Write-Err "Docker build failed for pdf-pipeline"; exit 1 }
 
@@ -344,8 +344,8 @@ if (-not $SkipBuild -and -not $InfraOnly) {
     Write-Host "  Building word-addin…" -ForegroundColor Gray
     docker build `
         -t "${ACR_ENDPOINT}/word-addin:${ImageTag}" `
-        -f "$ROOT/word-addin/Dockerfile" `
-        "$ROOT/word-addin"
+        -f "$ROOT/src/word-addin/Dockerfile" `
+        "$ROOT/src/word-addin"
     if ($LASTEXITCODE -ne 0) { Write-Err "Docker build failed for word-addin"; exit 1 }
 
     docker push "${ACR_ENDPOINT}/word-addin:${ImageTag}"

@@ -1,0 +1,122 @@
+# ==============================================================================
+# Azure DevOps pipeline — Infrastructure (Bicep)
+# ------------------------------------------------------------------------------
+# What it does:
+#   1. Validate the Bicep template (`bicep build` + `what-if`)
+#   2. Deploy `main.bicep` into the pre-created resource group (incremental)
+#
+# Triggers:
+#   - Push to main that touches bicep files
+#   - Manual run from the ADO UI
+#
+# See [docs/devops-setup.md](../docs/devops-setup.md) for the one-time setup
+# (service connection, variable group, environment, RG creation).
+# ==============================================================================
+
+name: infra-$(Date:yyyyMMdd).$(Rev:r)
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - main.bicep
+      - main.parameters.json
+      - modules/**
+      - .azure-pipelines/infra-deploy.yml
+
+pr: none  # use what-if on PRs only via a separate trigger if desired
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  # Variable group `aiquality-dev` (see docs/devops-setup.md) provides:
+  #   azureSubscriptionConnection : name of the ARM service connection
+  #   resourceGroupName            : rg-aiquality-dev
+  #   environmentName              : dev
+  #   location                     : francecentral
+  #   aiFoundryLocation            : swedencentral
+  - group: aiquality-dev
+
+stages:
+  - stage: Validate
+    displayName: Validate template
+    jobs:
+      - job: validate
+        displayName: bicep build + what-if
+        steps:
+          - checkout: self
+            displayName: Checkout repo
+
+          - task: AzureCLI@2
+            displayName: bicep build (lint)
+            inputs:
+              azureSubscription: $(azureSubscriptionConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                az bicep upgrade
+                az bicep build --file main.bicep --outdir $(Build.ArtifactStagingDirectory)/bicep
+                echo "Compiled ARM template:"
+                ls -la $(Build.ArtifactStagingDirectory)/bicep
+
+          - task: AzureCLI@2
+            displayName: what-if (predict changes)
+            inputs:
+              azureSubscription: $(azureSubscriptionConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                PRINCIPAL_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || echo "")
+                az deployment group what-if \
+                  --resource-group "$(resourceGroupName)" \
+                  --template-file main.bicep \
+                  --parameters \
+                      environmentName='$(environmentName)' \
+                      location='$(location)' \
+                      aiFoundryLocation='$(aiFoundryLocation)' \
+                      currentUserPrincipalId="$PRINCIPAL_ID" \
+                  --no-pretty-print 2>&1 | tail -100
+
+  - stage: Deploy
+    displayName: Deploy to $(environmentName)
+    dependsOn: Validate
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: deploy
+        displayName: az deployment group create
+        environment: aiquality-$(environmentName)  # gate with approvals in ADO UI
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: Checkout repo
+
+                - task: AzureCLI@2
+                  displayName: Deploy bicep
+                  inputs:
+                    azureSubscription: $(azureSubscriptionConnection)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+                      PRINCIPAL_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || echo "")
+                      az deployment group create \
+                        --resource-group "$(resourceGroupName)" \
+                        --name "infra-$(Build.BuildId)" \
+                        --template-file main.bicep \
+                        --parameters \
+                            environmentName='$(environmentName)' \
+                            location='$(location)' \
+                            aiFoundryLocation='$(aiFoundryLocation)' \
+                            currentUserPrincipalId="$PRINCIPAL_ID" \
+                        --query "properties.outputs" -o json | tee outputs.json
+
+                - publish: outputs.json
+                  artifact: infra-outputs
+                  displayName: Publish deployment outputs

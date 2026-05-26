@@ -1,0 +1,156 @@
+# ==============================================================================
+# Azure DevOps pipeline — Applications (ACR build + ACA deploy)
+# ------------------------------------------------------------------------------
+# What it does:
+#   1. Build & push 3 images via `az acr build` (runs inside Azure → no public
+#      ACR access needed; works even when the ACR has publicNetworkAccess=Disabled)
+#   2. Re-deploy main.bicep with the new imageTag so the ACAs pick up the new
+#      revisions and the pipeline Job points at the new image
+#   3. (Optional) Smoke-test by triggering the pdf-pipeline job
+#
+# Triggers:
+#   - Push to main that touches src/**
+#   - Manual run from the ADO UI
+# ==============================================================================
+
+name: apps-$(Date:yyyyMMdd).$(Rev:r)
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - src/**
+      - .azure-pipelines/apps-deploy.yml
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  # Variable group `aiquality-dev` provides:
+  #   azureSubscriptionConnection, resourceGroupName, environmentName,
+  #   location, aiFoundryLocation, acrName,
+  #   pdfPipelineJobName (default: job-pdf-pipeline)
+  - group: aiquality-dev
+  - name: imageTag
+    value: $(Build.BuildId)
+
+stages:
+  - stage: BuildAndPush
+    displayName: Build + push images (az acr build)
+    jobs:
+      - job: build
+        displayName: ACR build matrix
+        strategy:
+          matrix:
+            quality-api:
+              imageName: quality-api
+              dockerfile: src/api/Dockerfile
+              context: src
+            pdf-pipeline:
+              imageName: pdf-pipeline
+              dockerfile: src/pdf_pipeline/Dockerfile
+              context: src
+            word-addin:
+              imageName: word-addin
+              dockerfile: src/word-addin/Dockerfile
+              context: src/word-addin
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: az acr build $(imageName)
+            inputs:
+              azureSubscription: $(azureSubscriptionConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                az acr build \
+                  --registry "$(acrName)" \
+                  --image "$(imageName):$(imageTag)" \
+                  --image "$(imageName):latest" \
+                  --file "$(dockerfile)" \
+                  "$(context)"
+
+  - stage: DeployApps
+    displayName: Roll new image tag into ACAs
+    dependsOn: BuildAndPush
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: rollout
+        displayName: bicep deploy with new imageTag
+        environment: aiquality-$(environmentName)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: Deploy bicep (imageTag=$(imageTag))
+                  inputs:
+                    azureSubscription: $(azureSubscriptionConnection)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+                      PRINCIPAL_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || echo "")
+                      az deployment group create \
+                        --resource-group "$(resourceGroupName)" \
+                        --name "apps-$(Build.BuildId)" \
+                        --template-file main.bicep \
+                        --parameters \
+                            environmentName='$(environmentName)' \
+                            location='$(location)' \
+                            aiFoundryLocation='$(aiFoundryLocation)' \
+                            currentUserPrincipalId="$PRINCIPAL_ID" \
+                            imageTag='$(imageTag)' \
+                        --query "properties.outputs" -o json | tee outputs.json
+
+                - publish: outputs.json
+                  artifact: apps-outputs
+                  displayName: Publish deployment outputs
+
+  # Optional smoke test — comment out to disable
+  - stage: SmokeTestPipelineJob
+    displayName: Trigger pdf-pipeline job (smoke test)
+    dependsOn: DeployApps
+    condition: succeeded()
+    jobs:
+      - job: trigger
+        displayName: az containerapp job start
+        steps:
+          - task: AzureCLI@2
+            displayName: Start job execution
+            inputs:
+              azureSubscription: $(azureSubscriptionConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                EXEC_NAME=$(az containerapp job start \
+                  -g "$(resourceGroupName)" \
+                  -n "$(pdfPipelineJobName)" \
+                  --query "name" -o tsv)
+                echo "Started execution: $EXEC_NAME"
+                echo "##vso[task.setvariable variable=executionName]$EXEC_NAME"
+
+          - task: AzureCLI@2
+            displayName: Show execution status (non-blocking)
+            inputs:
+              azureSubscription: $(azureSubscriptionConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az containerapp job execution show \
+                  -g "$(resourceGroupName)" \
+                  -n "$(pdfPipelineJobName)" \
+                  --job-execution-name "$(executionName)" \
+                  --query "{name:name, status:properties.status, startTime:properties.startTime}" \
+                  -o table
+                echo "Tail logs with:"
+                echo "  az containerapp job logs show -g $(resourceGroupName) -n $(pdfPipelineJobName) --execution $(executionName) --follow"
