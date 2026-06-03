@@ -200,8 +200,8 @@ def run_pipeline(
     # =========================================================================
     if not skip_indexing:
         t0 = time.time()
-        # Set SKIP_AI_SEARCH=true to bypass AI Search indexing (Cosmos still runs).
-        skip_ai_search = os.environ.get("SKIP_AI_SEARCH", "false").lower() == "true"
+        # SKIP_AI_SEARCH defaults to true; set SKIP_AI_SEARCH=false to enable AI Search indexing.
+        skip_ai_search = os.environ.get("SKIP_AI_SEARCH", "true").lower() == "true"
         if skip_ai_search:
             logger.warning("SKIP_AI_SEARCH=true → skipping AI Search indexing step")
         else:
