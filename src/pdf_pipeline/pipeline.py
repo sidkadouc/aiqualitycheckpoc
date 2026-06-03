@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from pathlib import Path
 
@@ -199,11 +200,16 @@ def run_pipeline(
     # =========================================================================
     if not skip_indexing:
         t0 = time.time()
-        try:
-            index_chunks(chunks, rules, azure_cfg, pipeline_cfg)
-        except Exception as e:
-            result.errors.append(f"Step 6a (AI Search indexing): {e}")
-            logger.error("Failed at AI Search indexing: %s", e)
+        # Set SKIP_AI_SEARCH=true to bypass AI Search indexing (Cosmos still runs).
+        skip_ai_search = os.environ.get("SKIP_AI_SEARCH", "false").lower() == "true"
+        if skip_ai_search:
+            logger.warning("SKIP_AI_SEARCH=true → skipping AI Search indexing step")
+        else:
+            try:
+                index_chunks(chunks, rules, azure_cfg, pipeline_cfg)
+            except Exception as e:
+                result.errors.append(f"Step 6a (AI Search indexing): {e}")
+                logger.error("Failed at AI Search indexing: %s", e)
 
         try:
             store_rules_in_cosmos(rules, azure_cfg)
