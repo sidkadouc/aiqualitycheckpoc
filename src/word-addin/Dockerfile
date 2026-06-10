@@ -19,7 +19,9 @@ COPY assets/ ./assets/
 COPY manifest.xml ./
 
 # Build for production (webpack outputs to dist/)
+ARG API_BASE
 ENV NODE_ENV=production
+ENV API_BASE=${API_BASE}
 RUN npm run build
 
 # ── Runtime stage ──────────────────────────────────────────────

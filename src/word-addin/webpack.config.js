@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
@@ -7,6 +8,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const devCertsPath = path.join(require("os").homedir(), ".office-addin-dev-certs");
 
 const isProduction = process.env.NODE_ENV === "production";
+const API_BASE = process.env.API_BASE || "http://localhost:8000";
 
 module.exports = {
   entry: {
@@ -35,6 +37,9 @@ module.exports = {
     ],
   },
   plugins: [
+    new webpack.DefinePlugin({
+      "process.env.API_BASE": JSON.stringify(API_BASE),
+    }),
     new HtmlWebpackPlugin({
       template: "./src/taskpane/taskpane.html",
       filename: "taskpane.html",

@@ -4,8 +4,8 @@
 
 import { AddinResponse, CheckRequest, ParagraphCheckRequest } from "../models/types";
 
-/** Base URL of the quality-checker API (adjust for production). */
-const API_BASE = "http://localhost:8000";
+/** Base URL of the quality-checker API — injected at build time via webpack DefinePlugin (env var API_BASE). */
+const API_BASE: string = (process.env.API_BASE as string) || "http://localhost:8000";
 
 /** Max retries for transient / rate-limit errors. */
 const MAX_RETRIES = 3;

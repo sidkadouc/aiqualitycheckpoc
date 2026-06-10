@@ -32,7 +32,9 @@ pool:
 variables:
   # Variable group `aiquality-dev` provides:
   #   azureSubscriptionConnection, resourceGroupName, acrName,
-  #   pdfPipelineJobName (default: job-pdf-pipeline)
+  #   pdfPipelineJobName  (default: job-pdf-pipeline)
+  #   qualityApiUrl       (required: https://ca-quality-api.<env>.<region>.azurecontainerapps.io
+  #                        — baked into the word-addin JS bundle at build time)
   - group: aiquality-dev
   - name: imageTag
     value: $(Build.BuildId)
@@ -68,11 +70,22 @@ stages:
               scriptLocation: inlineScript
               inlineScript: |
                 set -euo pipefail
+                # word-addin needs the API URL baked into the JS bundle at build time
+                EXTRA_ARGS=()
+                if [[ "$(imageName)" == "word-addin" ]]; then
+                  if [[ -z "$(qualityApiUrl)" ]]; then
+                    echo "ERROR: variable 'qualityApiUrl' is required for word-addin build" >&2
+                    exit 1
+                  fi
+                  EXTRA_ARGS+=(--build-arg "API_BASE=$(qualityApiUrl)")
+                fi
+
                 az acr build \
                   --registry "$(acrName)" \
                   --image "$(imageName):$(imageTag)" \
                   --image "$(imageName):latest" \
                   --file "$(dockerfile)" \
+                  "${EXTRA_ARGS[@]}" \
                   "$(context)"
 
   - stage: DeployApps
@@ -96,28 +109,44 @@ stages:
                     inlineScript: |
                       set -euo pipefail
                       RG="$(resourceGroupName)"
-                      ACR_LOGIN_SERVER="$(acrName).azurecr.io"
+                      # Image references must be lowercase per OCI spec
+                      ACR_NAME_LC="$(echo "$(acrName)" | tr '[:upper:]' '[:lower:]')"
+                      ACR_LOGIN_SERVER="${ACR_NAME_LC}.azurecr.io"
                       TAG="$(imageTag)"
                       SUFFIX="b${TAG}"
 
-                      echo "==> ca-quality-api → quality-api:${TAG}"
+                      echo "RG=$RG"
+                      echo "ACR_LOGIN_SERVER=$ACR_LOGIN_SERVER"
+                      echo "TAG=$TAG"
+                      echo "SUFFIX=$SUFFIX"
+
+                      if [[ -z "$ACR_NAME_LC" ]]; then
+                        echo "ERROR: pipeline variable 'acrName' is empty — check the aiquality-dev variable group" >&2
+                        exit 1
+                      fi
+
+                      QUALITY_IMG="${ACR_LOGIN_SERVER}/quality-api:${TAG}"
+                      ADDIN_IMG="${ACR_LOGIN_SERVER}/word-addin:${TAG}"
+                      PIPE_IMG="${ACR_LOGIN_SERVER}/pdf-pipeline:${TAG}"
+
+                      echo "==> ca-quality-api → $QUALITY_IMG"
                       az containerapp update \
                         -g "$RG" -n ca-quality-api \
-                        --image "${ACR_LOGIN_SERVER}/quality-api:${TAG}" \
+                        --image "$QUALITY_IMG" \
                         --revision-suffix "$SUFFIX" \
                         -o table
 
-                      echo "==> ca-word-addin → word-addin:${TAG}"
+                      echo "==> ca-word-addin → $ADDIN_IMG"
                       az containerapp update \
                         -g "$RG" -n ca-word-addin \
-                        --image "${ACR_LOGIN_SERVER}/word-addin:${TAG}" \
+                        --image "$ADDIN_IMG" \
                         --revision-suffix "$SUFFIX" \
                         -o table
 
-                      echo "==> $(pdfPipelineJobName) → pdf-pipeline:${TAG}"
+                      echo "==> $(pdfPipelineJobName) → $PIPE_IMG"
                       az containerapp job update \
                         -g "$RG" -n "$(pdfPipelineJobName)" \
-                        --image "${ACR_LOGIN_SERVER}/pdf-pipeline:${TAG}" \
+                        --image "$PIPE_IMG" \
                         -o table
 
   # Optional smoke test — comment out to disable
