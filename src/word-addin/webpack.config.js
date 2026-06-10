@@ -60,14 +60,19 @@ module.exports = {
   ],
   devServer: {
     port: 3000,
-    server: {
-      type: "https",
-      options: {
-        key: fs.readFileSync(path.join(devCertsPath, "localhost.key")),
-        cert: fs.readFileSync(path.join(devCertsPath, "localhost.crt")),
-        ca: fs.readFileSync(path.join(devCertsPath, "ca.crt")),
-      },
-    },
+    // Only enable HTTPS with Office dev-certs when they exist locally.
+    // In Docker/CI the certs are absent — fall back to plain HTTP so the
+    // config can still be loaded for `npm run build`.
+    server: fs.existsSync(path.join(devCertsPath, "localhost.key"))
+      ? {
+          type: "https",
+          options: {
+            key: fs.readFileSync(path.join(devCertsPath, "localhost.key")),
+            cert: fs.readFileSync(path.join(devCertsPath, "localhost.crt")),
+            ca: fs.readFileSync(path.join(devCertsPath, "ca.crt")),
+          },
+        }
+      : "http",
     headers: {
       "Access-Control-Allow-Origin": "*",
     },
