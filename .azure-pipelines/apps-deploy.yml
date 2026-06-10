@@ -1,11 +1,11 @@
 # ==============================================================================
-# Azure DevOps pipeline — Applications (ACR build + ACA deploy)
+# Azure DevOps pipeline — Applications (ACR build + ACA update)
 # ------------------------------------------------------------------------------
 # What it does:
 #   1. Build & push 3 images via `az acr build` (runs inside Azure → no public
 #      ACR access needed; works even when the ACR has publicNetworkAccess=Disabled)
-#   2. Re-deploy main.bicep with the new imageTag so the ACAs pick up the new
-#      revisions and the pipeline Job points at the new image
+#   2. Roll the new image into each Container App / Job via `az containerapp update`
+#      (no bicep re-deploy — guarantees a new revision every run)
 #   3. (Optional) Smoke-test by triggering the pdf-pipeline job
 #
 # Triggers:
@@ -31,8 +31,7 @@ pool:
 
 variables:
   # Variable group `aiquality-dev` provides:
-  #   azureSubscriptionConnection, resourceGroupName, environmentName,
-  #   location, aiFoundryLocation, acrName,
+  #   azureSubscriptionConnection, resourceGroupName, acrName,
   #   pdfPipelineJobName (default: job-pdf-pipeline)
   - group: aiquality-dev
   - name: imageTag
@@ -74,6 +73,7 @@ stages:
                   --image "$(imageName):$(imageTag)" \
                   --image "$(imageName):latest" \
                   --file "$(dockerfile)" \
+                  --no-cache \
                   "$(context)"
 
   - stage: DeployApps
@@ -82,38 +82,44 @@ stages:
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     jobs:
       - deployment: rollout
-        displayName: bicep deploy with new imageTag
-        environment: aiquality-$(environmentName)
+        displayName: az containerapp update
+        environment: aiquality-dev
         strategy:
           runOnce:
             deploy:
               steps:
-                - checkout: self
-
                 - task: AzureCLI@2
-                  displayName: Deploy bicep (imageTag=$(imageTag))
+                  displayName: Update quality-api + word-addin + pdf-pipeline job
                   inputs:
                     azureSubscription: $(azureSubscriptionConnection)
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
                       set -euo pipefail
-                      PRINCIPAL_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || echo "")
-                      az deployment group create \
-                        --resource-group "$(resourceGroupName)" \
-                        --name "apps-$(Build.BuildId)" \
-                        --template-file main.bicep \
-                        --parameters \
-                            environmentName='$(environmentName)' \
-                            location='$(location)' \
-                            aiFoundryLocation='$(aiFoundryLocation)' \
-                            currentUserPrincipalId="$PRINCIPAL_ID" \
-                            imageTag='$(imageTag)' \
-                        --query "properties.outputs" -o json | tee outputs.json
+                      RG="$(resourceGroupName)"
+                      ACR_LOGIN_SERVER="$(acrName).azurecr.io"
+                      TAG="$(imageTag)"
+                      SUFFIX="b${TAG}"
 
-                - publish: outputs.json
-                  artifact: apps-outputs
-                  displayName: Publish deployment outputs
+                      echo "==> ca-quality-api → quality-api:${TAG}"
+                      az containerapp update \
+                        -g "$RG" -n ca-quality-api \
+                        --image "${ACR_LOGIN_SERVER}/quality-api:${TAG}" \
+                        --revision-suffix "$SUFFIX" \
+                        -o table
+
+                      echo "==> ca-word-addin → word-addin:${TAG}"
+                      az containerapp update \
+                        -g "$RG" -n ca-word-addin \
+                        --image "${ACR_LOGIN_SERVER}/word-addin:${TAG}" \
+                        --revision-suffix "$SUFFIX" \
+                        -o table
+
+                      echo "==> $(pdfPipelineJobName) → pdf-pipeline:${TAG}"
+                      az containerapp job update \
+                        -g "$RG" -n "$(pdfPipelineJobName)" \
+                        --image "${ACR_LOGIN_SERVER}/pdf-pipeline:${TAG}" \
+                        -o table
 
   # Optional smoke test — comment out to disable
   - stage: SmokeTestPipelineJob
