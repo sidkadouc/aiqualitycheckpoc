@@ -26,6 +26,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+# Ensure our app logs show up under uvicorn (which configures only uvicorn.*).
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
 # ── bootstrap ──────────────────────────────────────────────────────────
 try:
     from dotenv import load_dotenv
@@ -75,18 +81,60 @@ async def lifespan(app: FastAPI):
     """Load rules once at startup so every request reuses them."""
     global _rules, _router
 
+    # ── Dump rule-loading config so misconfig is obvious in logs ─────
+    logger.info(
+        "Rule loading config: USE_COSMOS_RULES=%s | COSMOS_ENDPOINT=%s | "
+        "DATABASE=%s | CONTAINER=%s | MI_CLIENT_ID=%s | RULES_JSON_PATH=%s",
+        USE_COSMOS_RULES,
+        COSMOS_ENDPOINT or "<unset>",
+        COSMOS_DATABASE,
+        COSMOS_RULES_CONTAINER,
+        MANAGED_IDENTITY_CLIENT_ID or "<none>",
+        _RULES_PATH,
+    )
+
     # Load rules from Cosmos DB (production) or local JSON (dev fallback)
     if USE_COSMOS_RULES and COSMOS_ENDPOINT:
         logger.info("Loading rules from Cosmos DB: %s/%s", COSMOS_DATABASE, COSMOS_RULES_CONTAINER)
-        _rules = load_rules_from_cosmos(
-            cosmos_endpoint=COSMOS_ENDPOINT,
-            database_name=COSMOS_DATABASE,
-            container_name=COSMOS_RULES_CONTAINER,
-            managed_identity_client_id=MANAGED_IDENTITY_CLIENT_ID or None,
-        )
+        try:
+            _rules = load_rules_from_cosmos(
+                cosmos_endpoint=COSMOS_ENDPOINT,
+                database_name=COSMOS_DATABASE,
+                container_name=COSMOS_RULES_CONTAINER,
+                managed_identity_client_id=MANAGED_IDENTITY_CLIENT_ID or None,
+            )
+        except Exception:
+            logger.exception(
+                "Cosmos rule load failed — falling back to JSON file at %s", _RULES_PATH,
+            )
+            _rules = []
+            if Path(_RULES_PATH).exists():
+                try:
+                    _rules = load_rules_from_json(_RULES_PATH)
+                except Exception:
+                    logger.exception("JSON fallback also failed")
+            else:
+                logger.error("JSON fallback path does not exist: %s", _RULES_PATH)
     else:
         logger.info("Loading rules from JSON file: %s", _RULES_PATH)
-        _rules = load_rules_from_json(_RULES_PATH)
+        if not Path(_RULES_PATH).exists():
+            logger.error("Rules JSON file NOT FOUND at %s", _RULES_PATH)
+            _rules = []
+        else:
+            try:
+                _rules = load_rules_from_json(_RULES_PATH)
+            except Exception:
+                logger.exception("Failed to load rules from JSON")
+                _rules = []
+
+    if not _rules:
+        logger.error(
+            "⚠️  STARTUP: 0 rules loaded — the API will reject every /api/check* "
+            "request with 500 'No rules to check against'. Fix rule loading before "
+            "calling endpoints.",
+        )
+    else:
+        logger.info("✓ STARTUP: %d rules loaded successfully", len(_rules))
 
     endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
     key = os.environ.get("AZURE_OPENAI_KEY") or None

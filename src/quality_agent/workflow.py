@@ -94,46 +94,157 @@ def load_rules_from_cosmos(
     the user-assigned managed identity has the *Cosmos DB Data Contributor*
     role.
 
-    Parameters
-    ----------
-    cosmos_endpoint:
-        Cosmos DB account URI  (``https://<account>.documents.azure.com:443/``).
-    database_name:
-        Database name (default ``appdata``).
-    container_name:
-        Container name (default ``policy-rules``).
-    credential:
-        Explicit credential or key string.  If ``None``, uses
-        ``DefaultAzureCredential`` (managed identity).
-    managed_identity_client_id:
-        When using a user-assigned managed identity, the client ID to
-        scope ``DefaultAzureCredential``.
+    Verbose diagnostics are emitted at every step so that connectivity,
+    auth, DNS, RBAC and schema issues can be diagnosed from the logs alone.
     """
-    from azure.cosmos import CosmosClient
+    import socket
+    import time
+    from urllib.parse import urlparse
 
+    from azure.cosmos import CosmosClient
+    from azure.cosmos.exceptions import (
+        CosmosHttpResponseError,
+        CosmosResourceNotFoundError,
+    )
+
+    # ── 1. Validate endpoint + DNS pre-flight ─────────────────────────
+    if not cosmos_endpoint:
+        raise ValueError("cosmos_endpoint is empty — set AZURE_COSMOS_ENDPOINT")
+
+    parsed = urlparse(cosmos_endpoint)
+    host = parsed.hostname or ""
+    logger.info(
+        "Cosmos: endpoint=%s host=%s database=%s container=%s",
+        cosmos_endpoint, host, database_name, container_name,
+    )
+
+    try:
+        resolved_ip = socket.gethostbyname(host)
+        is_private = resolved_ip.startswith(("10.", "172.", "192.168."))
+        logger.info(
+            "Cosmos: DNS '%s' -> %s (%s)",
+            host, resolved_ip,
+            "PRIVATE — private endpoint OK" if is_private else "PUBLIC — no private endpoint in use",
+        )
+    except socket.gaierror as e:
+        logger.error("Cosmos: DNS resolution FAILED for %s: %s", host, e)
+        raise
+
+    # ── 2. Build credential with explicit logging ─────────────────────
     if credential is None:
         from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
 
         if managed_identity_client_id:
-            credential = ManagedIdentityCredential(
-                client_id=managed_identity_client_id,
+            logger.info(
+                "Cosmos: auth=ManagedIdentityCredential (user-assigned, client_id=%s)",
+                managed_identity_client_id,
             )
+            credential = ManagedIdentityCredential(client_id=managed_identity_client_id)
         else:
+            logger.info("Cosmos: auth=DefaultAzureCredential (chain: env, MI, CLI, …)")
             credential = DefaultAzureCredential()
+    else:
+        logger.info("Cosmos: auth=%s (caller-supplied)", type(credential).__name__)
 
-    client = CosmosClient(cosmos_endpoint, credential=credential)
-    database = client.get_database_client(database_name)
-    container = database.get_container_client(container_name)
+    # ── 3. Probe token acquisition (optional but very useful) ─────────
+    if hasattr(credential, "get_token"):
+        try:
+            t0 = time.perf_counter()
+            token = credential.get_token("https://cosmos.azure.com/.default")
+            logger.info(
+                "Cosmos: AAD token acquired in %.0f ms (expires_on=%s)",
+                (time.perf_counter() - t0) * 1000, token.expires_on,
+            )
+        except Exception as e:  # noqa: BLE001 — diagnostic only
+            logger.error(
+                "Cosmos: AAD token acquisition FAILED (%s: %s) — "
+                "check managed identity assignment and AAD reachability",
+                type(e).__name__, e,
+            )
+            # don't re-raise — let the actual Cosmos call surface the error
 
-    raw_rules = list(
-        container.query_items(
-            query="SELECT * FROM c WHERE c.type != 'ruleset_summary' AND IS_DEFINED(c.rule_id)",
-            enable_cross_partition_query=True,
+    # ── 4. Build client + verify database/container exist ─────────────
+    try:
+        client = CosmosClient(cosmos_endpoint, credential=credential)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Cosmos: CosmosClient construction FAILED")
+        raise
+
+    try:
+        database = client.get_database_client(database_name)
+        db_info = database.read()
+        logger.info("Cosmos: database '%s' accessible (id=%s)", database_name, db_info.get("id"))
+    except CosmosResourceNotFoundError:
+        logger.error(
+            "Cosmos: database '%s' NOT FOUND — check AZURE_COSMOS_DATABASE", database_name,
         )
-    )
+        raise
+    except CosmosHttpResponseError as e:
+        logger.error(
+            "Cosmos: database read FAILED (status=%s, substatus=%s) — likely RBAC. "
+            "SAMI needs 'Cosmos DB Built-in Data Reader' or Data Contributor role.",
+            e.status_code, getattr(e, "sub_status", None),
+        )
+        raise
 
+    try:
+        container = database.get_container_client(container_name)
+        container_info = container.read()
+        logger.info(
+            "Cosmos: container '%s' accessible (partitionKey=%s)",
+            container_name, container_info.get("partitionKey", {}).get("paths"),
+        )
+    except CosmosResourceNotFoundError:
+        logger.error(
+            "Cosmos: container '%s' NOT FOUND in database '%s' — "
+            "has the pdf-pipeline job ever populated it?",
+            container_name, database_name,
+        )
+        raise
+
+    # ── 5. Run the actual query with timing + raw counts ──────────────
+    query = "SELECT * FROM c WHERE c.type != 'ruleset_summary' AND IS_DEFINED(c.rule_id)"
+    logger.info("Cosmos: executing query: %s", query)
+
+    try:
+        t0 = time.perf_counter()
+        raw_rules = list(
+            container.query_items(query=query, enable_cross_partition_query=True)
+        )
+        elapsed_ms = (time.perf_counter() - t0) * 1000
+        logger.info("Cosmos: query returned %d raw rows in %.0f ms", len(raw_rules), elapsed_ms)
+    except CosmosHttpResponseError as e:
+        logger.error(
+            "Cosmos: query FAILED (status=%s, substatus=%s, message=%s)",
+            e.status_code, getattr(e, "sub_status", None), e.message,
+        )
+        raise
+
+    # ── 6. Diagnose empty / malformed result sets ─────────────────────
+    if not raw_rules:
+        logger.warning(
+            "Cosmos: query returned 0 rows — checking total document count …",
+        )
+        try:
+            total = list(container.query_items(
+                query="SELECT VALUE COUNT(1) FROM c",
+                enable_cross_partition_query=True,
+            ))[0]
+            logger.warning(
+                "Cosmos: container has %d total documents (none matched rule filter). "
+                "Possible causes: (a) container is empty, (b) docs missing 'rule_id' field, "
+                "(c) all docs have type='ruleset_summary'.", total,
+            )
+        except Exception:  # noqa: BLE001
+            logger.exception("Cosmos: count probe failed")
+
+    # ── 7. Map to RuleInfo with per-row validation ────────────────────
     rules: list[RuleInfo] = []
+    skipped = 0
     for r in raw_rules:
+        if not r.get("rule_id"):
+            skipped += 1
+            continue
         rules.append(
             RuleInfo(
                 rule_id=r.get("rule_id", ""),
@@ -146,7 +257,18 @@ def load_rules_from_cosmos(
                 page=r.get("page"),
             )
         )
-    logger.info("Loaded %d rules from Cosmos DB (%s/%s)", len(rules), database_name, container_name)
+
+    if skipped:
+        logger.warning("Cosmos: %d rows skipped (empty rule_id)", skipped)
+
+    if rules:
+        logger.info(
+            "Cosmos: loaded %d rules (first id=%s, last id=%s)",
+            len(rules), rules[0].rule_id, rules[-1].rule_id,
+        )
+    else:
+        logger.error("Cosmos: 0 valid rules loaded — API will reject all checks!")
+
     return rules
 
 
