@@ -27,6 +27,9 @@ COPY pdf_pipeline/models.py ./pdf_pipeline/models.py
 COPY pdf_pipeline/__init__.py ./pdf_pipeline/__init__.py
 COPY run_api.py .
 
+# Rules JSON produced by the PDF pipeline — loaded at startup
+COPY pipeline_output/05_extracted_rules.json ./pipeline_output/05_extracted_rules.json
+
 # Expose port (ACA expects 8080 by default)
 EXPOSE 8080
 
